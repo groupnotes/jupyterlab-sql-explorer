@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "jupyterlab-sql-explorer",
+  "description": "jupyterlab-sql-explorer settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
