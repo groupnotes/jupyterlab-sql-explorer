@@ -2,27 +2,26 @@ import * as React from 'react';
 import { showDialog, Dialog, ReactWidget } from '@jupyterlab/apputils';
 import { TranslationBundle } from '@jupyterlab/translation';
 import { IPass } from '../interfaces'
+import { SqlModel } from '../model'
+import { dlgStyle300 } from './styles';
 
-export function askPasswd(pass_info: IPass, trans:TranslationBundle) {
-  const body = new AskPassDialog(pass_info, trans);
-
+export async function askPasswd(pass_info: IPass, model:SqlModel, trans:TranslationBundle):Promise<void> {
+  
   const buttons = [
     Dialog.cancelButton(),
     Dialog.okButton({ label: trans.__('Submit') })
   ];
 
-  showDialog({
+  let result = await showDialog({
     title: trans.__('Please input password'),
-    body: body,
+    body: new AskPassDialog(pass_info, trans),
     buttons
-  }).then(result => {
-    if (result.button.label === 'Submit') {
-      const value = result.value
-      console.log('Submitted:', value);
-    } else {
-      console.log('Canceled');
-    }
-  });
+  })
+  
+  if (result.button.label === trans.__('Submit')) {
+    const pi = result.value as IPass
+    model.set_pass(pi)
+  }
 }
 
 class AskPassDialog extends ReactWidget {
@@ -74,13 +73,13 @@ class PassForm extends React.Component<IPassFormProps, Partial<IPass>>  {
         let {db_user, db_pass}=this.state
         const {trans}=this.props
         return (
-          <div style={{width:300}}>
-            <div className='jp-InputGroup bp3-input-group'>
+          <div className={dlgStyle300}>
+            <div className='jp-InputGroup'>
                 <div>{trans.__('user')}</div>
-                <input className='bp3-input'  value={db_user} 
+                <input className='bp3-input' value={db_user} placeholder={trans.__('user connect to database')}
                     onChange={this._onChange('db_user')}/>
-                <div>{trans.__('pass')}</div>
-                <input type='password' className='bp3-input'  value={db_pass} 
+                <div>{trans.__('password')}</div>
+                <input type='password' className='bp3-input' value={db_pass} placeholder={trans.__('passwor')}
                     onChange={this._onChange('db_pass')}/>
             </div>
           </div>

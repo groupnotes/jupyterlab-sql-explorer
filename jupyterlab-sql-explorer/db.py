@@ -1,4 +1,5 @@
 from . import engine
+from .serializer import make_row_serializable
 
 def query(dbid, sql, **kwargs) ->list:
     '''
@@ -26,16 +27,15 @@ def query_header(dbid, sql, **kwargs) ->dict:
         usedb=kwargs['db']
     eng = engine.getEngine(dbid, usedb)
     if eng:
-        conn = eng.connect()
-        result = conn.execute(sql)
-        data = result.fetchall()
+        # conn = eng.connect()
+        result = eng.execute(sql)
+        data = [make_row_serializable(row) for row in result]
+        # data = result.fetchall()
         columns = list(result.keys())
-        conn.close()
+        # conn.close()
         return {'columns': columns, 'data': data}
 
     return []
-
-
 
 def get_column_info(dbid, db, tbl):
     '''
@@ -66,10 +66,9 @@ def get_column_info(dbid, db, tbl):
             for r in query(dbid, f"SELECT column_name, comments FROM all_col_comments WHERE table_name = '${tbl}'"):
                 print(r)
                 columns.append({'name': r[0], 'desc': '', 'type': 'col'})
-        elif dbinfo['db_type'] ==engine.DB_HIVE_LDAP or dbinfo['db_type'] ==engine.DB_HIVE_KERVERS:
+        elif dbinfo['db_type'] ==engine.DB_HIVE_LDAP or dbinfo['db_type'] ==engine.DB_HIVE_KERBEROS:
             for r in query(dbid, f"DESCRIBE {tbl}", db=db):
-                print(r)
-                columns.append({'name': r[0], 'desc': '', 'type': 'col'})
+                columns.append({'name': r['col_name'], 'desc': r['comment'], 'type': 'col'})
     return columns
 
 def get_db_or_table(dbid, database):

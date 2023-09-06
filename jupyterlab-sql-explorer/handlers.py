@@ -3,6 +3,7 @@ from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
 from . import engine, db
+import time
 
 class ConnHandler(APIHandler):
     '''
@@ -38,6 +39,13 @@ class DbTableHandler(APIHandler):
     @tornado.web.authenticated
     def get(self):
         dbid=self.get_argument('dbid')
+        if dbid=='__fake__':
+            data=[]
+            for i in range(10000):
+                data.append({'name': str(i), 'desc': f'desc {i}', 'type': 'db'})
+            time.sleep(1)
+            self.finish(json.dumps({'data': data}))
+            return
         database = self.get_argument('db', None)
         try:
             st, db_user=engine.check_pass(dbid)
@@ -86,6 +94,14 @@ class PasswdHandler(APIHandler):
         except Exception as err:
             self.log.error(err)
             self.finish(json.dumps({'error': "set passwd error : " + data.db_id}))
+    '''
+    Clear temporary stored password
+    '''
+    @tornado.web.authenticated
+    def delete(self):
+        dbid=self.get_argument('dbid', None)
+        engine.clear_pass(dbid)
+        self.finish(json.dumps({'data': 'set pass ok'}))
 
 class QueryHandler(APIHandler):
     '''

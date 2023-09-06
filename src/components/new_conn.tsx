@@ -1,61 +1,49 @@
 import * as React from 'react';
-import { showDialog, Dialog, ReactWidget } from '@jupyterlab/apputils';
-import { TranslationBundle } from '@jupyterlab/translation';
+import { ReactWidget } from '@jupyterlab/apputils';
+import { dlgStyle300 } from './styles';
 import { IDBConn } from '../interfaces'
 
-export function newConnDialog(trans:TranslationBundle) {
-  const body = new ConnDialog();
-
-  const buttons = [
-    Dialog.cancelButton(),
-    Dialog.okButton({ label: trans.__('Submit') })
-  ];
-
-  showDialog({
-    title: trans.__('Create New DB connection'),
-    body: body,
-    buttons
-  }).then(result => {
-    if (result.button.label === 'Submit') {
-      const value = result.value
-      console.log('Submitted:', value);
-    } else {
-      console.log('Canceled');
+export class ConnDialog extends ReactWidget {
+    
+    constructor(conn?:IDBConn) {
+        super();
+        this._conn=conn as IDBConn
     }
-  });
-}
-
-class ConnDialog extends ReactWidget {
-
+    
     getValue(): IDBConn {
         return this.form.getValue()
     }
 
     render(): JSX.Element {
-        return <ConnForm dialog={this}/>
+        return <ConnForm dialog={this} conn={this._conn}/>
     }
 
     public form!: ConnForm;
+    private _conn : IDBConn;
 }
 
-export interface IForm extends React.Component {
-    getValue : ()=>any
+interface IConnFormProps {
+    dialog: ConnDialog,
+    conn?: IDBConn
 }
 
-export class ConnForm extends React.Component<{dialog:ConnDialog}, Partial<IDBConn>> implements IForm {
+class ConnForm extends React.Component<IConnFormProps, Partial<IDBConn>> {
   
-    state : IDBConn = { db_id:'', db_type: '6', db_name:'' };
-    
+    constructor(props:IConnFormProps) {
+        super(props);
+        this.state = {...this.props.conn}
+    }
+
     getValue() : IDBConn {
-        return this.state
+        return this.state as IDBConn
     }
 
     render() {
         this.props.dialog.form=this
         let {db_id, db_type, db_name, db_host, db_port, db_user, db_pass, name}=this.state
         return (
-          <div style={{width:300}}>
-            <div className='jp-InputGroup bp3-input-group'>
+          <div className={dlgStyle300}>
+            <div className='jp-InputGroup'>
                 <div>名称</div>
                 <input className='bp3-input'  value={name} 
                     onChange={this._onChange('name')}/>
@@ -94,8 +82,8 @@ export class ConnForm extends React.Component<{dialog:ConnDialog}, Partial<IDBCo
         );
     }
     
-    private _onChange = (key:keyof IDBConn) =>(event: React.ChangeEvent<HTMLInputElement>| React.ChangeEvent<HTMLSelectElement>) => {
+    private _onChange = (key:keyof IDBConn) =>( event: React.ChangeEvent<HTMLInputElement> | 
+                                                React.ChangeEvent<HTMLSelectElement>) => {
         this.setState({[key]: event.target.value});
     };
-    
 }

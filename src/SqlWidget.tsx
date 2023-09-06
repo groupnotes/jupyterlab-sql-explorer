@@ -47,6 +47,13 @@ export class SqlWidget extends ReactWidget {
     //});
     super.onBeforeShow(msg);
   }
+    
+  onAfterAttach(msg: Message): void {
+    // Listen for resize messages
+    this.node.addEventListener('resize', ()=>console.log("RESIZE"));
+    console.log("onAfterAttach")
+    super.onAfterAttach(msg);  
+  }
 
   /**
    * Render the content of this widget using the virtual DOM.

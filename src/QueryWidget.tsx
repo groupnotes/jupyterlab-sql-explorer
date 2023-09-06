@@ -19,18 +19,7 @@ import { sqlIcon as queryIcon } from './icons';
 
 import { SingletonPanel } from './components/SingletonPanel'
 import { ResultsTable } from './components/ResultsTable'
-
-//import { SqlPanel } from './components/sqlPanel';
-//import { SqlModel } from './model';
-
-// export const sqlWidgetStyle = style({
-//   display: 'flex',
-//   flexDirection: 'column',
-//   minWidth: '300px',
-//   color: 'var(--jp-ui-font-color1)',
-//   background: 'var(--jp-layout-color1)',
-//   fontSize: 'var(--jp-ui-font-size1)'
-// });
+import { IQueryModel} from './model'
 
 export interface IEditor {
   readonly widget: EditorWidget;
@@ -112,7 +101,7 @@ export interface IResponse {
   setResponse(keys:Array<string>, rows:Array<Array<any>>): void;
 }
 
-export class Response {
+export class Response implements IResponse {
   constructor() {
     this._widget = new ResponseWidget();
   }
@@ -138,26 +127,7 @@ export class ResponseWidget extends SingletonPanel {
     }
     super.dispose();
   }
-
-  // setResponse(response: Api.ResponseModel.Type): void {
-  //   this._disposeTable();
-  //   Api.ResponseModel.match(
-  //     response,
-  //     (keys, rows) => {
-  //       const table = new ResultsTable(keys, rows);
-  //       this._table = table;
-  //       this.widget = table.widget;
-  //     },
-  //     () => {
-  //       const message = 'Command executed successfully';
-  //       this.widget = new PreWidget(message);
-  //     },
-  //     ({ message }) => {
-  //       this.widget = new PreWidget(message);
-  //     }
-  //   );
-  // }
-    
+  
   setResponse(keys:Array<string>, rows:Array<Array<any>>): void {
     this._disposeTable();
     const table = new ResultsTable(keys, rows);
@@ -184,8 +154,11 @@ class ToolbarText extends Widget {
 }
 
 export class QueryToolbar extends Toolbar {
-    constructor(jp_services:IJpServices) {
+    constructor(queryModel:IQueryModel, jp_services:IJpServices) {
         super();
+        this._queryModel=queryModel
+        this._queryModel.query_begin.connect(()=>console.log('query begin'))
+        this._queryModel.query_end.connect((_, st)=>console.log('query end', st))
         const {trans}=jp_services
         this.addItem(
           'run',
@@ -202,8 +175,13 @@ export class QueryToolbar extends Toolbar {
             tooltip: trans.__('Stop Query')})
         )
         this.addItem(
-          'DBID',
-          new ToolbarText("DCP")
+          'dbid',
+          new ToolbarText(this._queryModel.dbid)
+        ),
+            
+        this.addItem(
+          'schema',
+          new ToolbarText(trans.__("default schema:") + this._queryModel.table)
         )
     }
     
@@ -219,44 +197,52 @@ export class QueryToolbar extends Toolbar {
         console.log('run-stop')
         this._runButtonClicked.emit(void 0)
     }
+    
+    private _queryModel : IQueryModel;
     private readonly _runButtonClicked: Signal<this, void> = new Signal(this);
 }
 
 export class Content extends BoxPanel {
-    constructor(sql:string, jp_services:IJpServices) {
-        super();
-
-        this.editor = new Editor(sql, jp_services.editorService.factoryService );
+    constructor(
+        queryModel: IQueryModel, 
+        init_sql:string, 
+        jp_services:IJpServices
+    ) {
+        super()
+        this.queryModel=queryModel
+        this.toolbar = new QueryToolbar(queryModel, jp_services)    
+        this.editor  = new Editor(init_sql, jp_services.editorService.factoryService );
         this.response = new Response()
 
         this.addWidget(this.editor.widget);
         this.addWidget(this.response.widget);
-        BoxPanel.setStretch(this.editor.widget, 2);
-        BoxPanel.setStretch(this.response.widget, 5);
+        BoxPanel.setStretch(this.editor.widget, 5);
+        BoxPanel.setStretch(this.response.widget,2);
 
         this.editor.execute.connect(this.run)
+        this.toolbar.runButtonClicked.connect(this.run)
     }
     
-    run=()=>{
-       this.response.setResponse(['AA','BB'], [[1,2],[3,4]]) 
+    run=async ()=>{
+       const rc=await this.queryModel.query(this.editor.value)
+       if (rc.status=='OK') 
+           this.response.setResponse(rc.data.columns, rc.data.data)
     }
     
     readonly editor: IEditor;
     readonly response : Response;
+    readonly toolbar: QueryToolbar;
+    readonly queryModel: IQueryModel
 }
 
-export const newQuery = (sql:string, jp_services:IJpServices) => {
+export const newQuery = (queryModel: IQueryModel, sql:string, jp_services:IJpServices) => {
     
     // Regenerate the widget if disposed
     // if (widget.isDisposed) {
     //   widget = newWidget();
     // }
-    const toolbar = new QueryToolbar(jp_services)    
-    const content = new Content(sql, jp_services)
-    
-    toolbar.runButtonClicked.connect(()=>content.run())
-    
-    const widget = new MainAreaWidget({ content, toolbar});
+    const content = new Content(queryModel, sql, jp_services)
+    const widget = new MainAreaWidget({ content, toolbar:content.toolbar});
     widget.id = 'jp-sql-explorer:query';
     widget.title.icon = queryIcon;
     widget.title.label = 'SQL query';

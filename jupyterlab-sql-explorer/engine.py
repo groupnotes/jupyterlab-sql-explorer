@@ -213,3 +213,7 @@ def check_pass(dbid: str)->(bool, str):
 def set_pass(dbid: str, user: str, pwd: str)->(bool, str):
     _temp_pass_store[dbid]={'user': user, 'pwd': pwd}
     return True, None
+
+def clear_pass(dbid: str)->None:
+    global _temp_pass_store
+    _temp_pass_store=dict()

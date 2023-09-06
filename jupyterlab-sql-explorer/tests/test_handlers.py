@@ -74,10 +74,19 @@ async def test_passwd(jp_fetch):
     payload = json.loads(response.body)
     assert payload == {'data': 'set pass ok'}
 
+    response = await jp_fetch("jupyterlab-sql-explorer", "pass", method='DELETE')
+
 async def test_query(jp_fetch):
     response = await jp_fetch("jupyterlab-sql-explorer", "query",
                               method='POST',
-                              body=json.dumps({'dbid': 'sqlite', 'sql': 'SELECT * FROM sqlite_master'}))
+                              body=json.dumps({'dbid': 'mysql', 'sql': 'SELECT * FROM data.AAA'}))
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {'data': {'columns': ['type', 'name', 'tbl_name', 'rootpage', 'sql'], 'data': []}}
+
+
+async def test_fake_db(jp_fetch):
+    response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': '__fake__'})
+    assert response.code == 200
+    payload = json.loads(response.body)
+    assert payload == {'data': [{'name': 'a', 'desc': 'INT', 'type': 'col'}, {'name': 'b', 'desc': 'string', 'type': 'col'}]}

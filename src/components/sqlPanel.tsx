@@ -1,14 +1,16 @@
-import { IJpServices } from '../JpServices';
+import {Signal} from '@lumino/signaling';
+import { searchIcon } from '@jupyterlab/ui-components'
 import * as React from 'react';
 import { style } from 'typestyle';
 import { SqlModel} from '../model';
 import { IDbItem } from '../interfaces'
-//import { sqlIcon, connIcon, tabIcon, rootIcon, colIcon } from '../icons';
+import { IJpServices } from '../JpServices';
 import { rootIcon} from '../icons';
-import { searchIcon } from '@jupyterlab/ui-components'
 import { ConnList, DBList, TbList} from './dblist'
 import { ColList} from './collist'
-import { newConnDialog } from './new_conn'
+//import { newConnDialog } from './new_conn'
+import { hrStyle } from './styles';
+import { CommandIDs } from '../cmd_menu'
 
 const panelMain = style({
     padding: 10,
@@ -20,6 +22,7 @@ const navStyle = style({
     margin: 0,
     padding: 0,
     marginTop: 10,
+    marginBottom: 5,
     $nest: {
         '&>li': {
             display: 'inline-block',
@@ -72,7 +75,8 @@ export interface ISqlPanelProps {
 export interface ISqlPanelState {
     filter: string,
     path : Array<IDbItem>,
-    list_type : string
+    list_type : string,
+    wait : boolean
 }
 
 /**
@@ -90,7 +94,8 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
     this.state = {
       filter: '',
       path : [],
-      list_type : 'root'
+      list_type : 'root',
+      wait : false
     };
   }
 
@@ -98,6 +103,9 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
    * Callback invoked immediately after mounting a component (i.e., inserting into a tree).
    */
   async componentDidMount(): Promise<void> {
+      this.props.model.passwd_settled.connect((_, db_id)=>{
+          this._refresh()
+      }, this)
       let {path}=this.state
       const rc= await this.props.model.load_path(path)
       if (!rc) return
@@ -105,8 +113,8 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
   }
 
   componentWillUnmount(): void {
-    // Clear all signal connections
-    // Signal.clearData(this);
+    //Clear all signal connections
+    Signal.clearData(this);
   }
   
   /**
@@ -115,9 +123,10 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
    * @returns React element
    */
   render(): React.ReactElement {
-    const {filter, path, list_type}=this.state
+    const {filter, path, list_type, wait}=this.state
     const {model, jp_services}=this.props
     const {trans}=jp_services
+    const filter_l=filter.toLowerCase()
     return (
       <>
         <div className={panelMain}>
@@ -133,47 +142,49 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
                 { path.map((p, idx)=>
                     <li onClick={this._go(idx+1, p.type)}>&gt;<span title={p.name}>{p.name}</span></li> )}
             </ul>
-            <hr/>
+            <hr className={hrStyle}/>
         </div>
         { list_type=='root' && 
-            <ConnList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter} 
+            <ConnList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter_l} 
                 onAddConn={this._add} onRefresh={this._refresh}/> }
         { list_type=='conn' && 
-            <DBList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter}
-                onRefresh={this._refresh}/> }
+            <DBList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter_l}
+                wait={wait} onRefresh={this._refresh}/> }
         { list_type=='db' && 
-            <TbList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter}
-                onRefresh={this._refresh}/> }
+            <TbList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter_l}
+                wait={wait} onRefresh={this._refresh}/> }
         { list_type=='table' && 
-            <ColList list={model.get_list(path)} jp_services={jp_services} filter={filter}
-                    dbid={path[0].name} table={`${path[path.length-2].name}.${path[path.length-1].name}`} /> }            
+            <ColList list={model.get_list(path)} jp_services={jp_services} filter={filter_l} onRefresh={this._refresh}
+                wait={wait} dbid={path[0].name} table={`${path[path.length-2].name}.${path[path.length-1].name}`} /> }            
       </>
     );
   }
     
   private _go=(idx:number, list_type:string)=>(ev: React.MouseEvent<HTMLLIElement, MouseEvent>)=>{
     let {path}=this.state
-    this.setState({path:path.slice(0, idx), list_type})
+    this.setState({path:path.slice(0, idx), list_type, filter:''})
   }
     
-  private _select=(item: IDbItem)=>async (ev: React.MouseEvent<HTMLLIElement, MouseEvent>)=>{
+  private _select=(item: IDbItem)=>async (ev: React.MouseEvent<HTMLLIElement|HTMLDivElement, MouseEvent>)=>{
       let {path}=this.state
       let p=[...path, item]
-      const rc = await this.props.model.load_path(p)
-      if (!rc) return
-      this.setState({path:p, list_type:item.type, filter:''})
+      this.setState({path:p, list_type:item.type, filter:'', wait:true})
+      await this.props.model.load_path(p)
+      this.setState({wait:false})
   }
     
   private _add=async ()=>{
-      newConnDialog(this.props.jp_services.trans)
-  } 
+      const commandRegistry = this.props.jp_services.app.commands;
+      commandRegistry.execute(CommandIDs.sqlNewConn, {xxx:'1'});
+  }
     
   private _refresh=async()=>{
       let {path}=this.state
       let {model}=this.props
       model.refresh(path)
+      this.setState({wait:true})
       await model.load_path(path)
-      this.forceUpdate()
+      this.setState({wait:false})
   }   
     
   private _setFilter=(ev: React.ChangeEvent<HTMLInputElement>)=>{

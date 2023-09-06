@@ -7,6 +7,8 @@ import {
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IEditorServices } from '@jupyterlab/codeeditor';
+import { IMainMenu } from '@jupyterlab/mainmenu';
+//import { IStatusBar } from '@jupyterlab/statusbar';
 
 import { SqlWidget } from './SqlWidget';
 import { sqlIcon } from './icons';
@@ -15,6 +17,8 @@ import { IJpServices } from './JpServices';
 import { askPasswd} from './components/ask_pass'
 import { IPass} from './interfaces'
 
+import { addCommands, createMenu } from './cmd_menu'
+
 /**
  * Initialization data for the jupyterlab-sql-explorer extension.
  */
@@ -22,7 +26,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-sql-explorer:plugin',
   autoStart: true,
   requires: [ILayoutRestorer, IEditorServices],
-  optional: [ISettingRegistry, ITranslator],
+  optional: [IMainMenu, ISettingRegistry, ITranslator],
   activate
 };
 
@@ -30,6 +34,7 @@ function activate(
     app: JupyterFrontEnd, 
     restorer: ILayoutRestorer,
     editorService: IEditorServices,
+    mainMenu: IMainMenu | null,
     settingRegistry: ISettingRegistry | null,
     translator: ITranslator | null
 ) {
@@ -53,14 +58,22 @@ function activate(
         });
     }
     
-    // Create the Git widget sidebar
+    // Create Sql Explorer model
     const model=new SqlModel()
-    const sqlPlugin = new SqlWidget(model, jp_services);
-    
     model.need_passwd.connect((_, pass_info:IPass)=>{
-        askPasswd(pass_info, trans)
+        askPasswd(pass_info, model, trans)
     })
         
+    addCommands(app, model, trans)
+        
+    // Add a menu for the plugin
+    if (mainMenu && app.version.split('.').slice(0, 2).join('.') < '3.7') {
+      // Support JLab 3.0
+      mainMenu.addMenu(createMenu(app.commands, trans), { rank: 60 });
+    }
+    
+    // Create the Sql widget sidebar
+    const sqlPlugin = new SqlWidget(model, jp_services);
     sqlPlugin.id = 'jp-sql-sessions';
     sqlPlugin.title.icon = sqlIcon;
     sqlPlugin.title.caption = 'SQL explorer';

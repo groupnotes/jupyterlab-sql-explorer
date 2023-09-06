@@ -1,6 +1,10 @@
-import {Signal} from '@lumino/signaling';
-import {load_tree_root, load_tree_db_node, load_tree_table_node, load_tree_col_node } from './handler';
-import {IDbItem, IPass, ITreeCmdRes } from './interfaces'
+import {ISignal, Signal} from '@lumino/signaling';
+import {
+    load_tree_root, load_tree_db_node, load_tree_table_node, load_tree_col_node, 
+    set_pass, clear_pass,
+    query
+} from './handler';
+import {IDbItem, IPass, ITreeCmdRes, TApiStatus, IQueryRes } from './interfaces'
 
 export class SqlModel {
 
@@ -19,7 +23,7 @@ export class SqlModel {
             let find=false
             for(let i=0; i<cur_list.length; i++) {
                 if (cur_list[i].name==p.name) {
-                    if (cur_list[i].next===false) {
+                    if (cur_list[i].next===false || !('next' in cur_list[i])) {
                         return;
                     }
                     find=true
@@ -73,10 +77,14 @@ export class SqlModel {
                         if (p.type=='table') res = await load_tree_col_node(dbid, db, tbl)
                         if (res.status == 'NEED-PASS') {
                             // send as signal to triger passwd input
+                            cur_list[i].next=false
                             this._need_passwd.emit(res.pass_info as IPass)
                             return false
                         }
-                        if (res.status != 'OK')  return false
+                        if (res.status != 'OK')  {
+                            cur_list[i].next=false
+                            return false
+                        }
                         cur_list[i].next = res.data
                     }
                     cur_list = cur_list[i].next as IDbItem[]
@@ -106,10 +114,78 @@ export class SqlModel {
         return cur_list.map(({name, desc, type})=>({name, desc, type} as IDbItem))
     }
     
+    set_pass = async (pass_info:IPass)=>{
+        let rc = await set_pass(pass_info)
+        console.log(rc)
+        if (rc.status=='OK') {
+           this.passwd_settled.emit(pass_info.db_id) 
+        }else{
+           //send a message passwd error and retry
+           this.need_passwd.emit(pass_info)
+        }
+    }
+    
+    clear_pass= async ()=>{
+        await clear_pass()  
+    }
+    
     get need_passwd() {
         return this._need_passwd
+    }
+    
+    get passwd_settled() {
+        return this._passwd_settled
     }
 
     private _item_list:IDbItem[]=[]
     private _need_passwd = new Signal<SqlModel, IPass>(this);
+    private _passwd_settled = new Signal<SqlModel, string>(this);
+}
+
+/**
+ * model for stop query info 
+ */
+export interface IQueryModel {
+    dbid  : string, 
+    table : string,
+    query : (sql:string)=>Promise<IQueryRes>,
+    query_begin : ISignal<IQueryModel, void>,
+    query_end : ISignal<IQueryModel, TApiStatus>
+}
+
+export class QueryModel implements IQueryModel {
+    
+    constructor(dbid:string, table:string) {
+        this._dbid=dbid
+        this._table=table
+    }
+    
+    async query(sql: string):Promise<IQueryRes> {
+        this._query_begin.emit()
+        const rc = await query(this.dbid, this.table, sql)
+        this._query_end.emit(rc.status)
+        return rc
+    }
+    
+    get dbid() {
+        return this._dbid
+    }
+    
+    get table() {
+        return this._table
+    }
+    
+    get query_begin():ISignal<IQueryModel, void>{
+        return this._query_begin
+    }
+    
+    get query_end():ISignal<IQueryModel, TApiStatus> {
+        return this._query_end
+    }
+        
+    private _dbid : string;
+    private _table: string;
+    
+    private _query_begin = new Signal<IQueryModel, void>(this);
+    private _query_end = new Signal<IQueryModel, TApiStatus>(this);
 }

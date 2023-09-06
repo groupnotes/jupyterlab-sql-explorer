@@ -1,25 +1,37 @@
 import * as React from 'react';
-//import { refreshIcon } from '@jupyterlab/ui-components'
+import { refreshIcon } from '@jupyterlab/ui-components'
 import { newQuery } from '../QueryWidget'
 import { style } from 'typestyle';
 import { IDbItem } from '../interfaces'
 import { queryIcon } from '../icons';
-import { tbStyle, listStyle } from './styles';
+import { tbStyle, listStyle, hrStyle } from './styles';
 import { ActionBtn } from './ActionBtn'
 import { IJpServices } from '../JpServices';
+import { QueryModel} from '../model';
 
-const SelStyle = style({
-    paddingLeft: 0,
-    display: 'inline-block'
+const chkStyle = style({
+    padding: "2px 5px 2px 0px",
+    display: 'inline-flex',
+    alignItems: 'center',
+    borderRadius: '2px',
+    $nest : {
+        '&:hover': {
+            backgroundColor: '#ddd',
+        },
+        '&:active': {
+            backgroundColor: '#bbb'
+        }
+    }
 })
 
-// type SelectFunc=(item : IDbItem)=>(ev: React.MouseEvent<HTMLLIElement, MouseEvent>)=>Promise<void>
 type TColProps={
     jp_services : IJpServices,
     list : Array<IDbItem>,
     filter: string,
     dbid : string,
-    table : string
+    table : string,
+    onRefresh: ()=>any,
+    wait?: boolean
 }
 
 type TColState={
@@ -36,25 +48,30 @@ export class ColList extends React.Component<TColProps, TColState> {
     }
         
     render(): React.ReactElement {
-        const {jp_services, list, filter}=this.props
+        const {jp_services, list, filter, onRefresh}=this.props
         const {trans}=jp_services
         const {checked}=this.state
         const all = new Set<string>(list.map(p=>p.name))
         return (
         <>
             <div className={tbStyle}>
-                <div>
-                    <span onClick={this._select_all} className={SelStyle} >
-                        <input type='checkbox' checked={checked.size==all.size} />
-                        {checked.size==all.size?trans.__("Select None"):trans.__("Select All")}
-                    </span>
-                    <ActionBtn msg={trans.__('open sql console')} icon={queryIcon} 
-                        onClick={this._sql_query} style={{float:'right'}}/>
+                <div onClick={this._select_all} className={chkStyle} >
+                   <input type='checkbox' checked={checked.size==all.size} />
+                   <span>{checked.size==all.size?trans.__("Select None"):trans.__("Select All")}</span>
                 </div>
-                <hr/>
+                <div style={{float:'right'}}>
+                    <ActionBtn msg={trans.__('open sql console')} icon={queryIcon} 
+                        onClick={this._sql_query}/>
+                    <ActionBtn msg={trans.__('refresh')} icon={refreshIcon} onClick={onRefresh} />
+                </div>
+                <div style={{clear:'both'}}/>
+                <hr className={hrStyle}/>
             </div>
             <ul className={listStyle}>
-            { list.filter(p=>p.name.includes(filter) || (p.desc && p.desc.includes(filter))).map(p=>
+            { list.filter(
+                 p=>p.name.toLowerCase().includes(filter) || 
+                 (p.desc && p.desc.toLowerCase().includes(filter))
+              ).map(p=>
                 <li onClick={this._onSelect(p)} title={p.name+'\n'+p.desc}>
                     <input type='checkbox' checked={checked.has(p.name)} />
                     <span className='name'>{p.name}</span>
@@ -88,7 +105,7 @@ export class ColList extends React.Component<TColProps, TColState> {
         
     private _sql_query = ( ev: any) => {
         let {checked}=this.state
-        const {table}=this.props
+        const {dbid, table}=this.props
         let sql:string='SELECT '
         if (checked.size==0) {
             sql +="*"
@@ -98,6 +115,7 @@ export class ColList extends React.Component<TColProps, TColState> {
             sql += cols.join(',') 
         }
         sql += "\nFROM " + table + " t"
-        newQuery(sql, this.props.jp_services)
+        const qmodel=new QueryModel(dbid, table)
+        newQuery(qmodel, sql, this.props.jp_services)
     }
 }
