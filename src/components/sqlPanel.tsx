@@ -127,11 +127,11 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
                 <searchIcon.react tag="span" className={inputIconStyle}/>
             </div>
             <ul className={navStyle}>
-                <li onClick={this._go('root')}>
+                <li onClick={this._go(0, 'root')}>
                     <rootIcon.react tag="span" width="16px" height="16px" top="2px"/>
                 </li>
-                { path.map(p=>
-                    <li onClick={this._go(p)}>&gt;<span title={p.name}>{p.name}</span></li> )}
+                { path.map((p, idx)=>
+                    <li onClick={this._go(idx+1, p.type)}>&gt;<span title={p.name}>{p.name}</span></li> )}
             </ul>
             <hr/>
         </div>
@@ -151,30 +151,17 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
     );
   }
     
-  private _go=(p: IDbItem|string)=>(ev: React.MouseEvent<HTMLLIElement, MouseEvent>)=>{
-      let list_type:string='root';
-      if (p=='root') {
-          this.setState({path:[], list_type})
-      }else{
-          let {path}=this.state
-          var np:Array<IDbItem>=[]
-          for ( const cp of path) {
-              np.push(cp)
-              if (cp==p) {
-                  list_type=cp.type
-                  break;
-              }
-          }
-          this.setState({path:np, list_type})
-      }
+  private _go=(idx:number, list_type:string)=>(ev: React.MouseEvent<HTMLLIElement, MouseEvent>)=>{
+    let {path}=this.state
+    this.setState({path:path.slice(0, idx), list_type})
   }
     
   private _select=(item: IDbItem)=>async (ev: React.MouseEvent<HTMLLIElement, MouseEvent>)=>{
       let {path}=this.state
-      path.push(item)
-      const rc = await this.props.model.load_path(path)
+      let p=[...path, item]
+      const rc = await this.props.model.load_path(p)
       if (!rc) return
-      this.setState({path, list_type:item.type, filter:''})
+      this.setState({path:p, list_type:item.type, filter:''})
   }
     
   private _add=async ()=>{
