@@ -154,6 +154,7 @@ export interface IQueryModel {
     dbid  : string, 
     table : string,
     query : (sql:string)=>Promise<IQueryRes>,
+    stop  : ()=>void,
     query_begin : ISignal<IQueryModel, void>,
     query_finish : ISignal<IQueryModel, IQueryStatus>
 }
@@ -166,11 +167,17 @@ export class QueryModel implements IQueryModel {
     }
     
     async query(sql: string):Promise<IQueryRes> {
+        this._controller = new AbortController();
         this._query_begin.emit()
-        const rc = await query(this.dbid, this.table, sql)
+        const options = { signal: this._controller.signal };
+        const rc = await query(this.dbid, this.table, sql, options)
         const st:IQueryStatus = { status: rc.status, errmsg: rc.message}
         this._query_finish.emit(st)
         return rc
+    }
+    
+    stop=()=>{
+        this._controller.abort();
     }
     
     get dbid() {
@@ -194,4 +201,5 @@ export class QueryModel implements IQueryModel {
     
     private _query_begin = new Signal<IQueryModel, void>(this);
     private _query_finish = new Signal<IQueryModel, IQueryStatus>(this);
+    private _controller!: AbortController;
 }

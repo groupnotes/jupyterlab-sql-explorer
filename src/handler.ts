@@ -26,6 +26,11 @@ export async function requestAPI<T>(
   try {
     response = await ServerConnection.makeRequest(requestUrl, init, settings);
   } catch (error) {
+    // when user about, return { error }
+    // FIXME: Because the ServerConnection does not handle AbortError, we have to use a hack to deal with user abort
+    if (error.message === 'The user aborted a request.') {
+       return { error: error.message} as any
+    }
     throw new ServerConnection.NetworkError(error);
   }
 
@@ -54,7 +59,7 @@ export async function get<T>(act:string, params: {[key: string]: string}): Promi
             if (data.error=='NEED-PASS') {
                 rc = { status: 'NEED-PASS', pass_info:data.pass_info} as unknown as T
             }else{
-                rc = { status: 'ERROR', data: data.error} as unknown as T
+                rc = { status: 'ERR', message: data.error} as unknown as T
             }
         }else{
             rc = { status: 'OK', data: data.data } as unknown as T
@@ -67,12 +72,13 @@ export async function get<T>(act:string, params: {[key: string]: string}): Promi
     return rc
 }
 
-export async function post<T>(act:string, body: {[key: string]: string}): Promise<T> {
+export async function post<T>(act:string, body: {[key: string]: string}, options?: RequestInit): Promise<T> {
     let rc!: T
     let data: any
     try {
         data=await requestAPI<any>(act, 
-             { method: 'POST',  
+             { ...options,
+               method: 'POST',  
                headers: {'Content-Type': 'application/json'},
                body: JSON.stringify(body)
              })
@@ -80,15 +86,13 @@ export async function post<T>(act:string, body: {[key: string]: string}): Promis
             if (data.error=='NEED-PASS') {
                 rc = { status: 'NEED-PASS', pass_info:data.pass_info} as unknown as T
             }else{
-                rc = { status: 'ERROR', data: data.error} as unknown as T
+                rc = { status: 'ERR', message: data.error} as unknown as T
             }
         }else{
             rc = { status: 'OK', data: data.data } as unknown as T
         }
     }catch(reason) {
-        console.error(
-            `The jupyterlab-sql-explorer server extension appears to be missing.\n${reason}`
-        );
+        console.error(`The jupyterlab-sql-explorer server extension appears to be missing.\n${reason}`);
     }
     return rc
 }
@@ -102,7 +106,7 @@ export async function del<T>(act:string, params: {[key: string]: string}): Promi
             if (data.error=='NEED-PASS') {
                 rc = { status: 'NEED-PASS', pass_info:data.pass_info} as unknown as T
             }else{
-                rc = { status: 'ERROR', data: data.error} as unknown as T
+                rc = { status: 'ERROR', message: data.error} as unknown as T
             }
         }else{
             rc = { status: 'OK', data: data.data } as unknown as T
@@ -149,6 +153,6 @@ export const clear_pass = async() : Promise<IApiRes<any>> => {
     return await del('pass', {})
 }
 
-export const query = async(dbid:string, table:string, sql:string) : Promise<IQueryRes> => {
-    return await post('query', { dbid, sql})
+export const query = async(dbid:string, table:string, sql:string, options?:RequestInit ) : Promise<IQueryRes> => {
+    return await post('query', { dbid, sql}, options)
 }

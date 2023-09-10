@@ -27,7 +27,7 @@ import { sqlIcon as queryIcon, errorIcon } from './icons';
 import { ResultsTable } from './components/ResultsTable'
 import { Loading } from './components/loading'
 import { IQueryModel, IQueryStatus} from './model'
-
+import { ITableData } from './interfaces'
 
 export interface IEditor extends IDisposable {
   readonly widget: EditorWidget;
@@ -132,80 +132,11 @@ export class EditorWidget extends CodeEditorWrapper {
   private _executeCurrent = new Signal<this, void>(this);
 }
 
-// for ResponseWidget's
-
-// export interface IResponse {
-//   readonly widget: Widget;
-//   setResponse(keys:Array<string>, rows:Array<Array<any>>): void;
-// }
-
-// export class Response implements IResponse {
-//    constructor() {
-//      this._table = new ResultsTable([], []);
-//    }
-
-//    get widget(): Widget {
-//      return this._table.widget;
-//    }
-
-//    setResponse(keys:Array<string>, rows:Array<Array<any>>): void {
-//         if (this._table) {
-//             this._table.dispose();
-//         }
-//         this._table = new ResultsTable(keys, rows);
-//    }
-    
-//    private _table: ResultsTable;
-// }
-
-// export class Response implements IResponse {
-//   constructor() {
-//     this._widget = new ResponseWidget();
-//   }
-
-//   get widget(): Widget {
-//     return this._widget;
-//   }
-
-//   //setResponse(response: Api.ResponseModel.Type): void {
-//   //  this._widget.setResponse(response);
-//   //}
-//   setResponse(keys:Array<string>, rows:Array<Array<any>>): void {
-//     this._widget.setResponse(keys, rows);
-//   }
-
-//   private readonly _widget: ResponseWidget;
-// }
-
-// export class ResponseWidget extends SingletonPanel {
-//   dispose(): void {
-//     if (this._table) {
-//       this._table.dispose();
-//     }
-//     super.dispose();
-//   }
-  
-//   setResponse(keys:Array<string>, rows:Array<Array<any>>): void {
-//     this._disposeTable();
-//     const table = new ResultsTable(keys, rows);
-//     this._table = table;
-//     this.widget = table.widget;
-//   }
-
-//   private _disposeTable(): void {
-//     if (this._table) {
-//       this._table.dispose();
-//     }
-//     this._table = null;
-//   }
-
-//   private _table: ResultsTable | null = null;
-// }
-
 class ToolbarText extends Widget {
-    constructor(txt: string) {
+    constructor(txt: string, className?: string) {
         super();
-        //this.addClass('p-Sql-Toolbar-text');
+        this.addClass('jp-Sql-Exp-Toolbar-text');
+        if (className) this.addClass(className)                      
         this.node.innerText = txt
     }
 }
@@ -217,7 +148,8 @@ interface IRunStatusProps {
 
 interface IRunStatusState {
     running : 0|1|2,
-    time    : number
+    time    : number,
+    errmsg  : string
 }
 
 class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusState> {
@@ -226,7 +158,8 @@ class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusStat
     super(props);
     this.state = {
         running : 0,
-        time    : 0
+        time    : 0,
+        errmsg  : ''
     };
   }
     
@@ -248,11 +181,15 @@ class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusStat
    * @returns React element
    */
   render(): React.ReactElement {
-      const {running, time}=this.state
+      const {running, time, errmsg}=this.state
+      const {trans}=this.props;
       return <>
           { running==1 && <Loading/> }
-          { running==2 && <errorIcon.react tag="span" width="14px" height="14px" className={'xxx'}/>}
-          <span>{running} 时间：{this.convertMilliseconds(time)}</span>
+          { running==2 && <>
+              <errorIcon.react tag="span" width="14px" height="14px" className='jp-Sql-Exp-toolbar-icon'/>
+              <span className='jp-Sql-Exp-toolbar-errmsg'>{errmsg}</span>
+            </>}
+          { time!=0 && <span className='jp-Sql-Exp-toolbar-timer'>  {trans.__('elapsed time')}：{this.convertMilliseconds(time)}</span>}
       </>
   }
     
@@ -267,18 +204,18 @@ class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusStat
     let timeString = "";
 
     if (hours > 0) {
-        timeString += hours + trans.__("hour");
+        timeString += hours + ' ' + trans.__("hour");
     }
 
     if (minutes > 0) {
-        timeString += minutes + trans.__("min");
+        timeString += minutes + ' ' + trans.__("min");
     }
 
     if (hours === 0 && minutes === 0) {
         if (seconds < 10) {
-          timeString += seconds.toFixed(1) + trans.__("sec");
+          timeString += seconds.toFixed(1) + ' '+trans.__("sec");
         } else {
-          timeString += Math.round(seconds) + trans.__("sec");
+          timeString += Math.round(seconds) + ' ' + trans.__("sec");
         }
     }
 
@@ -286,7 +223,7 @@ class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusStat
   }
 
   private _start_query=()=>{
-     this._timer_id=setInterval(this._timer_fast, 110)
+     this._timer_id=setInterval(this._timer_fast, 107)
      this.setState({running:1, time:0}) 
   }
     
@@ -296,7 +233,7 @@ class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusStat
      if (e.status=='OK') {
         this.setState({running:0})
      }else{
-        this.setState({running:2})
+        this.setState({running:2, errmsg:e.errmsg||''})
      }
   }
     
@@ -306,7 +243,7 @@ class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusStat
         if (this._timer_id) clearInterval(this._timer_id)
         this._timer_id=setInterval(this._timer_slow, 1000)
      }
-     time += 110;
+     time += 107;
      this.setState({time})
   }
     
@@ -340,9 +277,13 @@ export class QueryToolbar extends Toolbar {
     constructor(queryModel:IQueryModel, jp_services:IJpServices) {
         super();
         this._queryModel=queryModel
-        this._queryModel.query_begin.connect(()=>console.log('query begin'))
-        this._queryModel.query_finish.connect((_, st)=>console.log('query end', st))
         const {trans}=jp_services
+        
+        this.addItem(
+          'dbid',
+          new ToolbarText(this._queryModel.dbid)
+        )
+        
         this.addItem(
           'run',
           new ToolbarButton({
@@ -350,6 +291,7 @@ export class QueryToolbar extends Toolbar {
             onClick: this._onRunButtonClicked,
             tooltip: trans.__('Run Query') })
         )
+        
         this.addItem(
           'stop',
           new ToolbarButton({
@@ -357,15 +299,11 @@ export class QueryToolbar extends Toolbar {
             onClick: this._onStopButtonClicked,
             tooltip: trans.__('Stop Query')})
         )
-        this.addItem(
-          'dbid',
-          new ToolbarText(this._queryModel.dbid)
-        ),
             
-        this.addItem(
+        /*this.addItem(
           'schema',
           new ToolbarText(trans.__("default schema:") + this._queryModel.table)
-        ),
+        ),*/
         
         this.addItem(
           'status',
@@ -376,18 +314,22 @@ export class QueryToolbar extends Toolbar {
     get runButtonClicked() {
         return this._runButtonClicked
     }
+    
+    get stopButtonClicked() {
+        return this._stopButtonClicked
+    }
 
     _onRunButtonClicked=()=>{
-        console.log('run-event')
         this._runButtonClicked.emit(void 0)
     }
+    
     _onStopButtonClicked=()=>{
-        console.log('run-stop')
-        this._runButtonClicked.emit(void 0)
+        this._stopButtonClicked.emit(void 0)
     }
     
     private readonly _queryModel : IQueryModel;
     private readonly _runButtonClicked: Signal<this, void> = new Signal(this);
+    private readonly _stopButtonClicked: Signal<this, void> = new Signal(this);
 }
 
 export class Content extends SplitPanel {
@@ -400,7 +342,6 @@ export class Content extends SplitPanel {
         this.queryModel=queryModel
         this.toolbar = new QueryToolbar(queryModel, jp_services)    
         this.editor  = new Editor(init_sql, jp_services.editorService.factoryService );
-        //this.response = new Response()
         this.resultsTable = new ResultsTable([], [])
 
         this.addWidget(this.editor.widget);
@@ -409,6 +350,7 @@ export class Content extends SplitPanel {
         
         this.editor.execute.connect(this.run, this)
         this.toolbar.runButtonClicked.connect(this.run, this)
+        this.toolbar.stopButtonClicked.connect(this.stop, this)
     }
     
     dispose(): void {
@@ -419,21 +361,29 @@ export class Content extends SplitPanel {
         super.dispose()
     }
     
-    run=async ()=>{
+    stop=()=>{
+        if (this._is_running) this.queryModel.stop()
+    }
+    
+    run = async()=>{
+       if (this._is_running) return
+       const sql=this.editor.value
+       if (sql=='') return
+       this._is_running=true
        this.resultsTable.setData([],[])
-       const rc=await this.queryModel.query(this.editor.value)
+       const rc=await this.queryModel.query(sql)
        if (rc.status=='OK') {
-           //this.resultsTable.dispose()
-           //this.resultsTable = new ResultsTable(rc.data.columns, rc.data.data)
-           //this.addWidget(this.resultsTable.widget);
-           //this.setRelativeSizes([2, 1]);
-           this.resultsTable.setData(rc.data.columns, rc.data.data)
+           const data=rc.data as ITableData 
+           this.resultsTable.setData(data.columns, data.data)
        }
-    }    
+       this._is_running=false 
+    }
+    
     readonly editor: IEditor;
     private resultsTable : ResultsTable;
     readonly toolbar: QueryToolbar;
-    readonly queryModel: IQueryModel
+    readonly queryModel: IQueryModel;
+    private _is_running:boolean = false
 }
 
 export const newQuery = (queryModel: IQueryModel, sql:string, jp_services:IJpServices) => {

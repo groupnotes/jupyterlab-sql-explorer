@@ -39,12 +39,14 @@ export interface ITreeCmdRes {
     pass_info?: IPass  // if status if NEED_PASS,
 }
 
+export interface ITableData {
+    columns : Array<string>,
+    data : Array<Array<any>>
+}
+
 export interface IQueryRes {
     status: TApiStatus,
-    data: {
-        columns : Array<string>,
-        data : Array<Array<any>>
-    }
+    data?: ITableData,
     message?: string,
     pass_info?: IPass  // if status if NEED_PASS,
 }
