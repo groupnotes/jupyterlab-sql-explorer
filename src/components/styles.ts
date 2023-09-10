@@ -59,7 +59,7 @@ export const divListStyle = style({
       },
       '&>span:first-child': {
          marginRight: 5,
-         verticalAlign: 'text-top'
+         //verticalAlign: 'text-top'
       },
       '&>.name': {
          marginRight: 5,
@@ -109,6 +109,9 @@ export const loadingStyle = style({
     animationDuration : '1s',
     animationIterationCount: 'infinite',
     animationTimingFunction: 'linear',
-    marginLeft: 10
+    marginLeft: 10,
+    marginRight: 10,
+    marginTop: 6
+    
 })
 

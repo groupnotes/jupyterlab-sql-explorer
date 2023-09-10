@@ -67,8 +67,20 @@ def get_column_info(dbid, db, tbl):
                 print(r)
                 columns.append({'name': r[0], 'desc': '', 'type': 'col'})
         elif dbinfo['db_type'] ==engine.DB_HIVE_LDAP or dbinfo['db_type'] ==engine.DB_HIVE_KERBEROS:
+            cols={}
+            pk=False
             for r in query(dbid, f"DESCRIBE {tbl}", db=db):
-                columns.append({'name': r['col_name'], 'desc': r['comment'], 'type': 'col'})
+                if r['col_name']=='':
+                    continue
+                if r['col_name'][0]=='#':
+                    if r['col_name']=='# Partition Information':
+                        pk=True
+                    continue
+                if pk is False:
+                    cols[r['col_name']]={'name': r['col_name'], 'desc': r['comment'], 'type': 'col'}
+                else:
+                    cols[r['col_name']]={'name': r['col_name'], 'desc': r['comment'], 'type': 'col', 'stype': 'parkey'}
+            columns=list(cols.values())
     return columns
 
 def get_db_or_table(dbid, database):

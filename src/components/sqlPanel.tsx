@@ -146,7 +146,7 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
         </div>
         { list_type=='root' && 
             <ConnList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter_l} 
-                onAddConn={this._add} onRefresh={this._refresh}/> }
+                wait={wait} onAddConn={this._add} onRefresh={this._refresh}/> }
         { list_type=='conn' && 
             <DBList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter_l}
                 wait={wait} onRefresh={this._refresh}/> }
@@ -169,13 +169,14 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
       let {path}=this.state
       let p=[...path, item]
       this.setState({path:p, list_type:item.type, filter:'', wait:true})
-      await this.props.model.load_path(p)
-      this.setState({wait:false})
+      const rc = await this.props.model.load_path(p)
+      if (rc) this.setState({wait:false})
   }
     
   private _add=async ()=>{
+      const {trans}=this.props.jp_services
       const commandRegistry = this.props.jp_services.app.commands;
-      commandRegistry.execute(CommandIDs.sqlNewConn, {xxx:'1'});
+      commandRegistry.execute(CommandIDs.sqlNewConn, {name:trans.__('unnamed')});
   }
     
   private _refresh=async()=>{
@@ -183,8 +184,8 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
       let {model}=this.props
       model.refresh(path)
       this.setState({wait:true})
-      await model.load_path(path)
-      this.setState({wait:false})
+      const rc=await model.load_path(path)
+      if (rc) this.setState({wait:false})
   }   
     
   private _setFilter=(ev: React.ChangeEvent<HTMLInputElement>)=>{

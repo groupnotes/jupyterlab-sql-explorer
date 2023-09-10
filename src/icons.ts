@@ -7,7 +7,7 @@ import rootSvg from '../style/icons/root.svg';
 import colSvg from '../style/icons/column.svg';
 import querySvg from '../style/icons/query.svg';
 import connAddSvg from '../style/icons/conn-add.svg';
-
+import errorSvg from '../style/icons/error.svg';
 
 export const sqlIcon = new LabIcon({
   name: 'sql-explorer',
@@ -42,4 +42,9 @@ export const queryIcon = new LabIcon({
 export const connAddIcon = new LabIcon({
   name: 'sql-explorer:db-add',
   svgstr: connAddSvg
+});
+
+export const errorIcon = new LabIcon({
+  name: 'sql-explorer:error',
+  svgstr: errorSvg
 });

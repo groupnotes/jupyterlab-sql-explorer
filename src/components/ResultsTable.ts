@@ -6,20 +6,27 @@ import { IDisposable } from '@lumino/disposable';
 
 import { CommandRegistry } from '@lumino/commands';
 
-import { Table } from './Table';
+import { Table, TableDataModel} from './Table';
 
 namespace CommandIds {
   export const copyToClipboard = 'copy-selection-to-clipboard';
 }
 
 export class ResultsTable implements IDisposable {
-  constructor(keys: Array<string>, data: Array<Array<any>>) {
+  constructor(keys: Array<string>, data: Array<Array<any>>, options?: Table.IOptions) {
     const contextMenu = this._createContextMenu();
-    this._table = Table.fromKeysRows(keys, data, { contextMenu });
+    this._model = new TableDataModel(keys, data);
+    this._table = new Table(this._model, { ...options, contextMenu })
   }
 
   get widget(): Widget {
     return this._table.widget;
+  }
+    
+  setData(keys: Array<string>, data: Array<Array<any>>) {
+    //if (!this._model.isDisposed) this._model.dispose()
+    this._model = new TableDataModel(keys, data);
+    this._table.dataModel = this._model;
   }
 
   dispose(): void {
@@ -50,6 +57,7 @@ export class ResultsTable implements IDisposable {
     }
   }
 
-  private readonly _table: Table;
   private _isDisposed = false;
+  private readonly _table: Table;
+  private _model: TableDataModel;
 }

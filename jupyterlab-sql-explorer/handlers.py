@@ -3,7 +3,7 @@ from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
 from . import engine, db
-import time
+import asyncio
 
 class ConnHandler(APIHandler):
     '''
@@ -39,11 +39,10 @@ class DbTableHandler(APIHandler):
     @tornado.web.authenticated
     def get(self):
         dbid=self.get_argument('dbid')
-        if dbid=='__fake__':
+        if dbid=='sqlite':
             data=[]
             for i in range(10000):
                 data.append({'name': str(i), 'desc': f'desc {i}', 'type': 'db'})
-            time.sleep(1)
             self.finish(json.dumps({'data': data}))
             return
         database = self.get_argument('db', None)
@@ -108,10 +107,11 @@ class QueryHandler(APIHandler):
     query a sql
     '''
     @tornado.web.authenticated
-    def post(self):
+    async def post(self):
         qdata = self.get_json_body()
         try:
-            data = db.query_header(qdata['dbid'], qdata['sql'])
+            loop=asyncio.get_event_loop()
+            data = await loop.run_in_executor(None, db.query_header, qdata['dbid'], qdata['sql'])
             self.finish(json.dumps({'data': data}))
         except Exception as err:
             self.log.error(err)

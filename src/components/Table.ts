@@ -1,12 +1,14 @@
 import { IDisposable } from '@lumino/disposable';
 
-import { Menu, Widget } from '@lumino/widgets';
+import { Menu} from '@lumino/widgets';
 
 import {
   DataModel,
   DataGrid,
   TextRenderer,
-  CellRenderer
+  CellRenderer,
+  BasicKeyHandler,
+  BasicMouseHandler,
 } from '@lumino/datagrid';
 
 import { ISignal, Signal } from '@lumino/signaling';
@@ -28,17 +30,25 @@ namespace Colors {
 
 export class Table implements IDisposable {
   constructor(model: TableDataModel, options: Table.IOptions) {
-    this._grid = new DataGrid();
+    this._grid = new DataGrid({
+        defaultSizes: {
+            rowHeight: 24,
+            columnWidth: 144,
+            rowHeaderWidth: 64,
+            columnHeaderHeight: 36
+        }
+    });
     this._grid.dataModel = model;
+    this._grid.keyHandler = new BasicKeyHandler();
+    this._grid.mouseHandler = new BasicMouseHandler();
     this._options = options;
     this._selectionManager = new DataGridExtensions.SelectionManager(model);
-    this._onClick = this._onClick.bind(this);
-    this._onContextMenu = this._onContextMenu.bind(this);
-    this._onDoubleClick = this._onDoubleClick.bind(this);
-
-    this._selectionManager.selectionChanged.connect(() => {
-      this._updateRenderers();
-    });
+    this._init()
+  }
+  
+  _init=()=>{
+    
+    this._selectionManager.selectionChanged.connect(this._updateRenderers, this);
 
     this._clickEventHandler = DataGridExtensions.addMouseEventListener(
       'click',
@@ -60,17 +70,15 @@ export class Table implements IDisposable {
 
     this._fitColumnWidths();
   }
-
-  static fromKeysRows(
-    keys: Array<string>,
-    data: Array<Array<any>>,
-    options: Table.IOptions
-  ): Table {
-    const model = new TableDataModel(keys, data);
-    return new Table(model, options);
+    
+  set dataModel(model:TableDataModel) {
+      this._grid.dataModel = model;
+      this._selectionManager.selectionChanged.disconnect(this._updateRenderers, this)
+      this._selectionManager = new DataGridExtensions.SelectionManager(model);
+      this._init();
   }
 
-  get widget(): Widget {
+  get widget(): DataGrid {
     return this._grid;
   }
 
@@ -104,6 +112,8 @@ export class Table implements IDisposable {
     this._clickEventHandler.dispose();
     this._contextMenuEventHandler.dispose();
     this._dblclickEventHandler.dispose();
+    if (this._grid.keyHandler!=null) this._grid.keyHandler.dispose();
+    if (this._grid.mouseHandler!=null) this._grid.mouseHandler.dispose();
     this._grid.dispose();
     this._isDisposed = true;
   }
@@ -112,12 +122,12 @@ export class Table implements IDisposable {
     DataGridExtensions.fitColumnWidths(this._grid, new TextRenderer());
   }
 
-  private _onClick(event: DataGridExtensions.GridMouseEvent) {
+  private _onClick=(event: DataGridExtensions.GridMouseEvent)=>{
     const { row, column } = event;
     this._updateSelection(row, column);
   }
 
-  private _onContextMenu(event: DataGridExtensions.GridMouseEvent) {
+  private _onContextMenu=(event: DataGridExtensions.GridMouseEvent)=>{
     const { row, column, rawEvent } = event;
     this._updateSelection(row, column);
     if (this._isInBody(row, column)) {
@@ -126,7 +136,7 @@ export class Table implements IDisposable {
     }
   }
 
-  private _onDoubleClick(event: DataGridExtensions.GridMouseEvent) {
+  private _onDoubleClick=(event: DataGridExtensions.GridMouseEvent)=> {
     const { row, column } = event;
     if (this._isInBody(row, column)) {
       const cellIndex = {
@@ -163,7 +173,7 @@ export class Table implements IDisposable {
     );
   }
 
-  private _updateRenderers(): void {
+  private _updateRenderers = ():void => {
     const renderer = this._textRendererForSelection(
       this._selectionManager.selection
     );
@@ -200,19 +210,16 @@ export class Table implements IDisposable {
   }
 
   private readonly _grid: DataGrid;
-  private readonly _selectionManager: DataGridExtensions.SelectionManager;
-  private readonly _clickEventHandler: IDisposable;
-  private readonly _contextMenuEventHandler: IDisposable;
-  private readonly _dblclickEventHandler: IDisposable;
+  private _selectionManager!: DataGridExtensions.SelectionManager;
+  private _clickEventHandler!: IDisposable;
+  private _contextMenuEventHandler!: IDisposable;
+  private _dblclickEventHandler!: IDisposable;
   private readonly _options: Table.IOptions;
-  private readonly _dblclickSignal: Signal<
-    this,
-    DataGridExtensions.BodyCellIndex
-  > = new Signal(this);
+  private readonly _dblclickSignal: Signal<this, DataGridExtensions.BodyCellIndex> = new Signal(this);
   private _isDisposed = false;
 }
 
-class TableDataModel extends DataModel {
+export class TableDataModel extends DataModel {
   constructor(keys: Array<string>, data: Array<Array<any>>) {
     super();
     this._data = data;

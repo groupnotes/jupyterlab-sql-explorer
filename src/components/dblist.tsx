@@ -2,13 +2,12 @@ import * as React from 'react';
 import { TranslationBundle } from '@jupyterlab/translation';
 import { refreshIcon } from '@jupyterlab/ui-components'
 import { FixedSizeList as List } from 'react-window';
-import { classes } from 'typestyle';
-//import AutoSizer from "react-virtualized-auto-sizer";
+import { Loading } from './loading';
 import AutoSizer from "../auto_resizer";
 
 import { IDbItem } from '../interfaces'
 import { connIcon, sqlIcon, tabIcon, connAddIcon } from '../icons';
-import { tbStyle, listStyle, hrStyle, divListStyle, loadingStyle, spinStyle } from './styles';
+import { tbStyle, listStyle, hrStyle, divListStyle} from './styles';
 import { ActionBtn } from './ActionBtn'
 
 type SelectFunc=(item : IDbItem)=>(ev: React.MouseEvent<HTMLLIElement|HTMLDivElement, MouseEvent>)=>Promise<void>
@@ -23,8 +22,6 @@ type ListProps = {
 }
 
 type ConnListProps= ListProps & { onAddConn: ()=>any}
-
-export const Loading : React.FC=()=><span className={classes(loadingStyle, spinStyle)} />
 
 export const ConnList : React.FC<ConnListProps> = ({trans, onSelect, list, onAddConn, onRefresh, filter}): React.ReactElement => {
     return (
@@ -58,12 +55,11 @@ export const DBList : React.FC<ListProps> = ({trans, onSelect, list, onRefresh, 
     const Row = ({index, style, data}:{index: number; style: React.CSSProperties;data:any}) =>{
         const p=data[index]
         return (<div key={index} style={style}  onClick={onSelect(p)} title={p.name+'\n'+p.desc} className={divListStyle}>
-                     { p.type=='db' && <sqlIcon.react tag="span" width="16px" height="16px"/> }
-                     { p.type=='table' && <tabIcon.react tag="span" width="16px" height="16px"/> }
+                     { p.type=='db' && <sqlIcon.react tag="span" width="16px" height="16px" verticalAlign="text-top"/> }
+                     { p.type=='table' && <tabIcon.react tag="span" width="16px" height="16px" verticalAlign="text-top"/> }
                      <span className='name'>{p.name}</span>
                      <span className='memo'>{p.desc}</span></div>)
     }
-    console.log(wait)
     return (
         <>
             <div className={tbStyle}>
@@ -98,7 +94,7 @@ export const TbList : React.FC<ListProps> = ({trans, onSelect, list, onRefresh, 
     const Row = ({index, style, data}:{index: number; style: React.CSSProperties;data:any}) =>{
         const p=data[index]
         return (<div key={index} style={style}  onClick={onSelect(p)} title={p.name+'\n'+p.desc} className={divListStyle}>
-                     <tabIcon.react tag="span" width="14px" height="14px" right="5px"/>
+                     <tabIcon.react tag="span" width="14px" height="14px" right="5px" verticalAlign="text-top"/>
                      <span className='name'>{p.name}</span>
                      <span className='memo'>{p.desc}</span></div>)
     }

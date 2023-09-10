@@ -8,6 +8,7 @@ import { tbStyle, listStyle, hrStyle } from './styles';
 import { ActionBtn } from './ActionBtn'
 import { IJpServices } from '../JpServices';
 import { QueryModel} from '../model';
+import { Loading } from './loading';
 
 const chkStyle = style({
     padding: "2px 5px 2px 0px",
@@ -48,7 +49,7 @@ export class ColList extends React.Component<TColProps, TColState> {
     }
         
     render(): React.ReactElement {
-        const {jp_services, list, filter, onRefresh}=this.props
+        const {jp_services, list, filter, wait, onRefresh}=this.props
         const {trans}=jp_services
         const {checked}=this.state
         const all = new Set<string>(list.map(p=>p.name))
@@ -56,7 +57,7 @@ export class ColList extends React.Component<TColProps, TColState> {
         <>
             <div className={tbStyle}>
                 <div onClick={this._select_all} className={chkStyle} >
-                   <input type='checkbox' checked={checked.size==all.size} />
+                   <input type='checkbox' checked={checked.size==all.size && all.size!=0} disabled={filter!=''}/>
                    <span>{checked.size==all.size?trans.__("Select None"):trans.__("Select All")}</span>
                 </div>
                 <div style={{float:'right'}}>
@@ -67,23 +68,26 @@ export class ColList extends React.Component<TColProps, TColState> {
                 <div style={{clear:'both'}}/>
                 <hr className={hrStyle}/>
             </div>
-            <ul className={listStyle}>
-            { list.filter(
-                 p=>p.name.toLowerCase().includes(filter) || 
-                 (p.desc && p.desc.toLowerCase().includes(filter))
-              ).map(p=>
-                <li onClick={this._onSelect(p)} title={p.name+'\n'+p.desc}>
-                    <input type='checkbox' checked={checked.has(p.name)} />
-                    <span className='name'>{p.name}</span>
-                    <span className='memo'>{p.desc}</span></li>)}
-                           
-            </ul>
+            { wait? <Loading /> :
+                <ul className={listStyle}>
+                { list.filter(
+                     p=>p.name.toLowerCase().includes(filter) || 
+                     (p.desc && p.desc.toLowerCase().includes(filter))
+                  ).map(p=>
+                    <li onClick={this._onSelect(p)} title={p.name+'\n'+p.desc}>
+                        <input type='checkbox' checked={checked.has(p.name)} />
+                        <span className='name'>{p.name}</span>
+                        <span className='memo'>{p.desc}</span></li>)}
+
+                </ul>
+             }
         </>)
     }
     
     private _select_all=async (ev: any)=>{
         let {checked}=this.state
-        const {list}=this.props
+        const {list, filter}=this.props
+        if (filter!='') return
         if (checked.size==list.length) {
             checked.clear()
         }else{

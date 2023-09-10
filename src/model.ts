@@ -116,7 +116,6 @@ export class SqlModel {
     
     set_pass = async (pass_info:IPass)=>{
         let rc = await set_pass(pass_info)
-        console.log(rc)
         if (rc.status=='OK') {
            this.passwd_settled.emit(pass_info.db_id) 
         }else{
@@ -145,12 +144,18 @@ export class SqlModel {
 /**
  * model for stop query info 
  */
+
+export interface IQueryStatus {
+    status : TApiStatus,
+    errmsg ?: string
+}
+
 export interface IQueryModel {
     dbid  : string, 
     table : string,
     query : (sql:string)=>Promise<IQueryRes>,
     query_begin : ISignal<IQueryModel, void>,
-    query_end : ISignal<IQueryModel, TApiStatus>
+    query_finish : ISignal<IQueryModel, IQueryStatus>
 }
 
 export class QueryModel implements IQueryModel {
@@ -163,7 +168,8 @@ export class QueryModel implements IQueryModel {
     async query(sql: string):Promise<IQueryRes> {
         this._query_begin.emit()
         const rc = await query(this.dbid, this.table, sql)
-        this._query_end.emit(rc.status)
+        const st:IQueryStatus = { status: rc.status, errmsg: rc.message}
+        this._query_finish.emit(st)
         return rc
     }
     
@@ -179,13 +185,13 @@ export class QueryModel implements IQueryModel {
         return this._query_begin
     }
     
-    get query_end():ISignal<IQueryModel, TApiStatus> {
-        return this._query_end
+    get query_finish():ISignal<IQueryModel, IQueryStatus> {
+        return this._query_finish
     }
         
     private _dbid : string;
     private _table: string;
     
     private _query_begin = new Signal<IQueryModel, void>(this);
-    private _query_end = new Signal<IQueryModel, TApiStatus>(this);
+    private _query_finish = new Signal<IQueryModel, IQueryStatus>(this);
 }

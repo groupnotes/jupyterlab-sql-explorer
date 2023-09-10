@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { showDialog, Dialog, ReactWidget } from '@jupyterlab/apputils';
+import { showDialog, ReactWidget } from '@jupyterlab/apputils';
 import { TranslationBundle } from '@jupyterlab/translation';
 import { IPass } from '../interfaces'
 import { SqlModel } from '../model'
@@ -7,21 +7,23 @@ import { dlgStyle300 } from './styles';
 
 export async function askPasswd(pass_info: IPass, model:SqlModel, trans:TranslationBundle):Promise<void> {
   
-  const buttons = [
+  /*const buttons = [
     Dialog.cancelButton(),
     Dialog.okButton({ label: trans.__('Submit') })
-  ];
+  ];*/
 
-  let result = await showDialog({
+  let result = await showDialog<IPass>({
     title: trans.__('Please input password'),
     body: new AskPassDialog(pass_info, trans),
-    buttons
+    hasClose: false,
+    focusNodeSelector: 'input.bp3-input'
   })
   
-  if (result.button.label === trans.__('Submit')) {
-    const pi = result.value as IPass
-    model.set_pass(pi)
-  }
+  // if (result.button.label === trans.__('OK')) {
+  //   const pi = result.value as IPass
+  //   model.set_pass(pi)
+  // }
+  if (result.value) model.set_pass(result.value)
 }
 
 class AskPassDialog extends ReactWidget {
