@@ -212,8 +212,23 @@ def check_pass(dbid: str)->(bool, str):
 
 def set_pass(dbid: str, user: str, pwd: str)->(bool, str):
     _temp_pass_store[dbid]={'user': user, 'pwd': pwd}
-    return True, None
+
+    eng = getEngine(dbid)
+    if eng:
+        try:
+            conn = eng.connect()
+            conn.close()
+            return True, None
+        except:
+            del _temp_pass_store[dbid]
+            return False, "user or passwd error"
+    else:
+        del _temp_pass_store[dbid]
+        return False, "user or passwd error"
 
 def clear_pass(dbid: str)->None:
     global _temp_pass_store
-    _temp_pass_store=dict()
+    if dbid is None:
+        _temp_pass_store=dict()
+    else:
+        del _temp_pass_store[dbid]

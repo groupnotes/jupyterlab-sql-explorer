@@ -2,9 +2,10 @@ import {ISignal, Signal} from '@lumino/signaling';
 import {
     load_tree_root, load_tree_db_node, load_tree_table_node, load_tree_col_node, 
     set_pass, clear_pass,
-    query
+    query, get_query, stop_query,
+    edit_conn
 } from './handler';
-import {IDbItem, IPass, ITreeCmdRes, TApiStatus, IQueryRes } from './interfaces'
+import {IDbItem, IPass, ITreeCmdRes, TApiStatus, IQueryRes, IDBConn } from './interfaces'
 
 export class SqlModel {
 
@@ -114,6 +115,16 @@ export class SqlModel {
         return cur_list.map(({name, desc, type})=>({name, desc, type} as IDbItem))
     }
     
+    add_conn = async (conn:IDBConn)=>{
+        console.log(conn)
+        let rc = await edit_conn(conn)
+        if (rc.status=='OK') {
+           this.conn_changed.emit(conn.db_id) 
+        }else{
+           //this.need_passwd.emit(pass_info)
+        }
+    }
+    
     set_pass = async (pass_info:IPass)=>{
         let rc = await set_pass(pass_info)
         if (rc.status=='OK') {
@@ -135,10 +146,15 @@ export class SqlModel {
     get passwd_settled() {
         return this._passwd_settled
     }
+    
+    get conn_changed() {
+        return this._conn_changed
+    }
 
     private _item_list:IDbItem[]=[]
     private _need_passwd = new Signal<SqlModel, IPass>(this);
     private _passwd_settled = new Signal<SqlModel, string>(this);
+    private _conn_changed = new Signal<SqlModel, string>(this);
 }
 
 /**
@@ -170,7 +186,11 @@ export class QueryModel implements IQueryModel {
         this._controller = new AbortController();
         this._query_begin.emit()
         const options = { signal: this._controller.signal };
-        const rc = await query(this.dbid, this.table, sql, options)
+        let rc = await query(this.dbid, this.table, sql, options)
+        while(rc.status=='RETRY') {
+            this._taskid = rc.data as string, 
+            rc = await get_query(this._taskid, options)
+        }
         const st:IQueryStatus = { status: rc.status, errmsg: rc.message}
         this._query_finish.emit(st)
         return rc
@@ -178,6 +198,7 @@ export class QueryModel implements IQueryModel {
     
     stop=()=>{
         this._controller.abort();
+        stop_query(this._taskid)
     }
     
     get dbid() {
@@ -198,6 +219,7 @@ export class QueryModel implements IQueryModel {
         
     private _dbid : string;
     private _table: string;
+    private _taskid!: string;
     
     private _query_begin = new Signal<IQueryModel, void>(this);
     private _query_finish = new Signal<IQueryModel, IQueryStatus>(this);

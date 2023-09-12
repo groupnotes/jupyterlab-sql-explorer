@@ -39,8 +39,8 @@ class AskPassDialog extends ReactWidget {
     }
 
     render(): JSX.Element {
-        const {db_id, db_user}=this._pass_info
-        return <PassForm dialog={this} db_id={db_id} db_user={db_user} trans={this._trans}/>
+        const {db_id, db_user, db_pass}=this._pass_info
+        return <PassForm dialog={this} db_id={db_id} db_user={db_user} db_pass={db_pass} trans={this._trans}/>
     }
 
     public form!: PassForm;
@@ -48,11 +48,9 @@ class AskPassDialog extends ReactWidget {
     private _trans: TranslationBundle;
 }
 
-interface IPassFormProps {
+interface IPassFormProps extends Partial<IPass>{
     dialog:AskPassDialog, 
-    db_id:string, 
     trans:TranslationBundle,
-    db_user?:string
 }
 
 class PassForm extends React.Component<IPassFormProps, Partial<IPass>>  {
@@ -62,7 +60,7 @@ class PassForm extends React.Component<IPassFormProps, Partial<IPass>>  {
         this.state = { 
             db_id: this.props.db_id, 
             db_user: this.props.db_user, 
-            db_pass:''
+            db_pass: this.props.db_pass,
         };
     }
     

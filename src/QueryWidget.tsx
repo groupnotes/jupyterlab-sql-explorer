@@ -33,6 +33,7 @@ export interface IEditor extends IDisposable {
   readonly widget: EditorWidget;
 
   readonly value: string;
+  readonly sql: string;
   readonly appendText : (txt:string)=>void;
   readonly execute: ISignal<this, string>;
   readonly valueChanged: ISignal<this, string>;
@@ -67,6 +68,12 @@ export class Editor implements IEditor, IDisposable {
   }
   
   get value(): string {
+     return this._model.value.text;
+  }
+    
+  get sql(): string {
+     // Get the current SQL statement separated by semicolons 
+     // or the selected text as sql 
      const editor=this.widget.editor;
      const selection = editor.getSelection();
      const start: number = editor.getOffsetAt(selection.start);
@@ -76,7 +83,28 @@ export class Editor implements IEditor, IDisposable {
          if (start>end) text = text.slice(end, start);
          else text = text.slice(start, end);
      }
-     return text;
+     return this.findSegment(text, start)
+  }
+
+  private findSegment(text:string, pos:number): string {
+     // segment by ;, and return whitch around pos
+     const segments = text.split(';');
+     let segmentIndex = -1;
+
+     for (let i = 0; i < segments.length; i++) {
+        if (pos <= segments[i].length) {
+          segmentIndex = i;
+          break;
+        }
+
+        pos -= segments[i].length + 1; 
+     }
+
+     if (segmentIndex === -1) {
+        segmentIndex = segments.length - 1;
+     }
+
+     return segments[segmentIndex];
   }
 
   get widget(): EditorWidget {
@@ -135,7 +163,7 @@ export class EditorWidget extends CodeEditorWrapper {
 class ToolbarText extends Widget {
     constructor(txt: string, className?: string) {
         super();
-        this.addClass('jp-Sql-Exp-Toolbar-text');
+        this.addClass('jp-Sql-Exp-toolbar-text');
         if (className) this.addClass(className)                      
         this.node.innerText = txt
     }
@@ -367,16 +395,16 @@ export class Content extends SplitPanel {
     
     run = async()=>{
        if (this._is_running) return
-       const sql=this.editor.value
+       const sql=this.editor.sql
        if (sql=='') return
        this._is_running=true
        this.resultsTable.setData([],[])
        const rc=await this.queryModel.query(sql)
-       if (rc.status=='OK') {
-           const data=rc.data as ITableData 
+       this._is_running=false 
+       if (rc.status=='OK' && rc.data!=undefined) {
+           const data=rc.data as ITableData
            this.resultsTable.setData(data.columns, data.data)
        }
-       this._is_running=false 
     }
     
     readonly editor: IEditor;

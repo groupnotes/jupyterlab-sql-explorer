@@ -69,17 +69,25 @@ async def test_passwd(jp_fetch):
 
     response = await jp_fetch("jupyterlab-sql-explorer", "pass",
                               method='POST',
+                              body=json.dumps({'db_id': 'mysql_nopass', 'db_user': 'root', 'db_pass': '123456'}))
+    assert response.code == 200
+    payload = json.loads(response.body)
+    assert payload == {'error': 'user or passwd error'}
+
+    response = await jp_fetch("jupyterlab-sql-explorer", "pass",
+                              method='POST',
                               body=json.dumps({'db_id': 'mysql_nopass', 'db_user': 'root', 'db_pass': '12345'}))
     assert response.code == 200
     payload = json.loads(response.body)
-    assert payload == {'data': 'set pass ok'}
+    assert payload == {'data': 'set passwd ok'}
 
     response = await jp_fetch("jupyterlab-sql-explorer", "pass", method='DELETE')
 
 async def test_query(jp_fetch):
     response = await jp_fetch("jupyterlab-sql-explorer", "query",
                               method='POST',
-                              body=json.dumps({'dbid': 'mysql', 'sql': 'SELECT * FROM data.AAA'}))
+                              # body=json.dumps({'dbid': 'mysql', 'sql': 'SELECT * FROM data.AAA'}))
+                              body=json.dumps({'dbid': 'mysql', 'sql': 'inserxt into data.DDD values(1,2)'}))
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {'data': {'columns': ['type', 'name', 'tbl_name', 'rootpage', 'sql'], 'data': []}}

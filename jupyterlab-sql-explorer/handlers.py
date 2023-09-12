@@ -3,7 +3,7 @@ from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
 from . import engine, db
-import asyncio
+from . import task
 
 class ConnHandler(APIHandler):
     '''
@@ -87,12 +87,12 @@ class PasswdHandler(APIHandler):
         try:
             st, msg=engine.set_pass(data['db_id'], data['db_user'], data['db_pass'])
             if st:
-                self.finish(json.dumps({'data': 'set pass ok'}))
+                self.finish(json.dumps({'data': 'set passwd ok'}))
             else:
                 self.finish(json.dumps({'error': msg}))
         except Exception as err:
             self.log.error(err)
-            self.finish(json.dumps({'error': "set passwd error : " + data.db_id}))
+            self.finish(json.dumps({'error': "set passwd error : " + data['db_id']}))
     '''
     Clear temporary stored password
     '''
@@ -104,18 +104,48 @@ class PasswdHandler(APIHandler):
 
 class QueryHandler(APIHandler):
     '''
-    query a sql
+    create/get/del query task
+    The query may take a long time to run, so we have implemented long polling.
+    For queries that have a runtime longer than 120 seconds, the response will be 'RETRY,' and the client will use GET to wait.
     '''
     @tornado.web.authenticated
     async def post(self):
         qdata = self.get_json_body()
         try:
-            loop=asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, db.query_header, qdata['dbid'], qdata['sql'])
-            self.finish(json.dumps({'data': data}))
+            # db.set_log(self.log)
+            taskid = await task.create_query_task(db.query_header, qdata['dbid'], qdata['sql'])
+            self.finish(json.dumps({'error': 'RETRY', 'data': taskid}))
         except Exception as err:
             self.log.error(err)
-            self.finish(json.dumps({'error': "query error!"}))
+            self.finish(json.dumps({'error': str(err)}))
+
+    '''
+    get status of query
+    '''
+    @tornado.web.authenticated
+    async def get(self):
+        task_id=self.get_argument('taskid')
+        try:
+            rc, data = await task.get_result(task_id)
+            if rc:
+                self.finish(json.dumps({'data': data}))
+            else:
+                self.finish(json.dumps(data))
+        except Exception as err:
+            self.log.error(err)
+            self.finish(json.dumps({'error': str(err)}))
+    '''
+    canel query
+    '''
+    @tornado.web.authenticated
+    async def delete(self):
+        task_id=self.get_argument('taskid')
+        try:
+            await task.delete(task_id)
+            self.finish(json.dumps({}))
+        except Exception as err:
+            self.log.error(err)
+            self.finish(json.dumps({'error': str(err)}))
 
 def handler_url(base_url, act):
     return url_path_join(base_url, "jupyterlab-sql-explorer", act)

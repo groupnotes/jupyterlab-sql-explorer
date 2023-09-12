@@ -1,5 +1,11 @@
 from . import engine
 from .serializer import make_row_serializable
+import time
+
+log=None
+def set_log(_log):
+    global log
+    log = _log
 
 def query(dbid, sql, **kwargs) ->list:
     '''
@@ -22,20 +28,39 @@ def query_header(dbid, sql, **kwargs) ->dict:
     '''
     make a query, return with header
     '''
+
+#     if 'LIMIT' in sql.upper():
+#         import re
+#         limit_pattern = re.compile(r'(LIMIT\s+(\d+))', flags=re.IGNORECASE)
+#         match = limit_pattern.search(sql)
+
+#         if match:
+#             existing_limit = int(match.group(2))
+#             if existing_limit >= 1000:
+#                 sql_with_limit = sql
+#             else:
+#                 sql_with_limit = limit_pattern.sub('LIMIT 200 ', sql)
+#         else:
+#             sql_with_limit = f"{sql} LIMIT 200"
+#     else:
+#         sql_with_limit = f"{sql} LIMIT 200"
+
+    # global log
+    # for i in range(30):
+    #     time.sleep(1)
+    #     log.error(i)
+
     usedb=None
     if 'db' in kwargs:
         usedb=kwargs['db']
     eng = engine.getEngine(dbid, usedb)
     if eng:
-        # conn = eng.connect()
         result = eng.execute(sql)
-        data = [make_row_serializable(row) for row in result]
-        # data = result.fetchall()
-        columns = list(result.keys())
-        # conn.close()
-        return {'columns': columns, 'data': data}
-
-    return []
+        if result.returns_rows:
+            data = [make_row_serializable(row) for row in result]
+            columns = list(result.keys())
+            return {'columns': columns, 'data': data}
+    return {}
 
 def get_column_info(dbid, db, tbl):
     '''

@@ -53,6 +53,8 @@ export const divListStyle = style({
      userSelect: 'none',
      lineHeight: '25px',
      boxSizing: 'border-box',
+     display: 'flex',
+     alignItems: 'center',
      $nest: {
       '&:hover': {
           backgroundColor:'#ddd'

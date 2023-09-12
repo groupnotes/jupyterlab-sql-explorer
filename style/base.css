@@ -5,17 +5,36 @@
 */
 
 .jp-Sql-Exp-toolbar-text {
-  font-weight: 700  
+  font-weight: 700;
+  align-items: center
 }
 
-.jp-Sql-Exp-toolbar-errmsg {
-    margin-right: 10px
+.jp-Sql-Exp-toolbar-errmsg,
+.jp-Sql-Exp-toolbar-timer {
+    margin-right: 10px;
+    height: 100%;
+    line-height: 24px;
 }
 
 .jp-Sql-Exp-toolbar-icon {
-    margin: 2px 10px
+    margin: 0px 10px;
+    height: 100%;
 }
 
-.jp-Sql-Exp-toolbar-timer {
-    margin: 0px
+.jp-Sql-Exp-input {
+    display: flex;
+    margin: 5px 0px;
+}
+
+.jp-Sql-Exp-input>span:first-child {
+    width: 60px;
+    line-height: 30px;
+    text-align: right;
+    margin-right: 3px;
+}
+
+.jp-Sql-Exp-input select {
+    width: 100%;
+    border: 1px solid #888;
+    border-radius: 0;
 }

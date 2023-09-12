@@ -1,13 +1,28 @@
 import * as React from 'react';
+import { TranslationBundle } from '@jupyterlab/translation';
 import { ReactWidget } from '@jupyterlab/apputils';
 import { dlgStyle300 } from './styles';
 import { IDBConn } from '../interfaces'
 
+type TChgFun=(event: React.ChangeEvent<any>)=>void
+
+interface InputProps {
+    name  : string,
+    value? : string,
+    onChange : TChgFun
+}
+
+const Inp: React.FC<InputProps> =({name, value, onChange}): React.ReactElement=>(<div className='jp-Sql-Exp-input'>
+    <span>{name}</span>
+    <input className='bp3-input'  value={value||''} onChange={onChange}/>
+</div>)
+
 export class ConnDialog extends ReactWidget {
     
-    constructor(conn?:IDBConn) {
+    constructor(conn:IDBConn,  trans: TranslationBundle) {
         super();
         this._conn=conn as IDBConn
+        this._trans=trans
     }
     
     getValue(): IDBConn {
@@ -15,15 +30,17 @@ export class ConnDialog extends ReactWidget {
     }
 
     render(): JSX.Element {
-        return <ConnForm dialog={this} conn={this._conn}/>
+        return <ConnForm dialog={this} conn={this._conn} trans={this._trans}/>
     }
 
     public form!: ConnForm;
     private _conn : IDBConn;
+    private _trans : TranslationBundle;
 }
 
 interface IConnFormProps {
     dialog: ConnDialog,
+    trans: TranslationBundle
     conn?: IDBConn
 }
 
@@ -41,42 +58,31 @@ class ConnForm extends React.Component<IConnFormProps, Partial<IDBConn>> {
     render() {
         this.props.dialog.form=this
         let {db_id, db_type, db_name, db_host, db_port, db_user, db_pass, name}=this.state
+        const {trans}=this.props
         return (
           <div className={dlgStyle300}>
             <div className='jp-InputGroup'>
-                <div>名称</div>
-                <input className='bp3-input'  value={name} 
-                    onChange={this._onChange('name')}/>
-                <div>ID</div>
-                <input className='bp3-input'  value={db_id} 
-                    onChange={this._onChange('db_id')}/>
-                <div>类型</div>
-                <select className='bp3-input' value={db_type} onChange={this._onChange('db_type')}>
-                    <option value='1'>mysql</option>
-                    <option value='2'>pgsql</option>
-                    <option value='3'>oracle</option>
-                    <option value='4'>hive</option>
-                    <option value='5'>hive-kerbert</option>
-                    <option value='6'>sqlite</option>
-                </select>
+               <Inp name={trans.__('Name')} value={name} onChange={this._onChange('name')}/>
+               <Inp name='ID' value={db_id} onChange={this._onChange('db_id')}/>
+               <div className='jp-Sql-Exp-input'> 
+                   <span>{trans.__('Type')}</span>
+                   <select className='bp3-input' value={db_type} onChange={this._onChange('db_type')}>
+                        <option value='1'>mysql</option>
+                        <option value='2'>pgsql</option>
+                        <option value='3'>oracle</option>
+                        <option value='4'>hive</option>
+                        <option value='5'>hive-kerbert</option>
+                        <option value='6'>sqlite</option>
+                   </select>
+                </div>
                 { db_type!='6' && 
                     <>
-                        <div>IP地址</div>
-                        <input className='bp3-input'  value={db_host} 
-                            onChange={this._onChange('db_host')}/>
-                        <div>端口</div>
-                        <input className='bp3-input'  value={db_port} 
-                            onChange={this._onChange('db_port')}/>
-                        <div>用户名</div>
-                        <input className='bp3-input'  value={db_user} 
-                            onChange={this._onChange('db_user')}/>
-                        <div>密码</div>
-                        <input className='bp3-input'  value={db_pass} 
-                            onChange={this._onChange('db_pass')}/>
+                        <Inp name={trans.__('IP')} value={db_host} onChange={this._onChange('db_host')}/>
+                        <Inp name={trans.__('PORT')} value={db_port} onChange={this._onChange('db_port')}/>
+                        <Inp name={trans.__('User')} value={db_user} onChange={this._onChange('db_user')}/>
+                        <Inp name={trans.__('Pass')} value={db_pass} onChange={this._onChange('db_pass')}/>
                      </>}
-                <div>数据库</div>
-                <input className='bp3-input'  value={db_name} 
-                    onChange={this._onChange('db_name')}/>
+                <Inp name={trans.__('Schema')} value={db_name} onChange={this._onChange('db_name')}/>
             </div>
           </div>
         );

@@ -23,7 +23,7 @@ export interface IPass {
     db_pass: string
 }
 
-export type TApiStatus = 'OK' | 'NEED-PASS' | 'ERR'
+export type TApiStatus = 'OK' | 'NEED-PASS' | 'RETRY' | 'ERR'
 
 export interface IApiRes<T> {
     status: TApiStatus,
@@ -46,7 +46,7 @@ export interface ITableData {
 
 export interface IQueryRes {
     status: TApiStatus,
-    data?: ITableData,
+    data?: ITableData | string,
     message?: string,
     pass_info?: IPass  // if status if NEED_PASS,
 }
