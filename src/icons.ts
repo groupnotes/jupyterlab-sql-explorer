@@ -8,10 +8,16 @@ import colSvg from '../style/icons/column.svg';
 import querySvg from '../style/icons/query.svg';
 import connAddSvg from '../style/icons/conn-add.svg';
 import errorSvg from '../style/icons/error.svg';
+import sqlScSvg from '../style/icons/sql_script.svg';
 
 export const sqlIcon = new LabIcon({
   name: 'sql-explorer',
   svgstr: sqlSvg
+});
+
+export const sqlScIcon = new LabIcon({
+  name: 'sql-explorer:file',
+  svgstr: sqlScSvg
 });
 
 export const connIcon = new LabIcon({

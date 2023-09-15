@@ -13,7 +13,7 @@ import {
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import * as DataGridExtensions from './dataGridExtensions';
+import * as DataGridExtensions from '../DataGridExtensions';
 
 export namespace Table {
   export interface IOptions {

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { refreshIcon } from '@jupyterlab/ui-components'
-import { newQuery } from '../QueryWidget'
+//import { newQuery } from '../QueryWidget'
+import { newSqlConsole } from '../sqlConsole'
 import { style } from 'typestyle';
 import { IDbItem } from '../interfaces'
 import { queryIcon } from '../icons';
@@ -118,8 +119,8 @@ export class ColList extends React.Component<TColProps, TColState> {
             checked.forEach(c=>cols.push(`t.${c}`))
             sql += cols.join(',') 
         }
-        sql += "\nFROM " + table + " t"
+        sql += "\nFROM " + table + " t LIMIT 200"
         const qmodel=new QueryModel(dbid, table)
-        newQuery(qmodel, sql, this.props.jp_services)
+        newSqlConsole(qmodel, sql, this.props.jp_services)
     }
 }

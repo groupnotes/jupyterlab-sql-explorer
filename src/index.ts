@@ -8,16 +8,18 @@ import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { IMainMenu } from '@jupyterlab/mainmenu';
+//import { DocumentRegistry } from '@jupyterlab/docregistry';
 //import { IStatusBar } from '@jupyterlab/statusbar';
 
 import { SqlWidget } from './SqlWidget';
-import { sqlIcon } from './icons';
+import { sqlIcon} from './icons';
 import { SqlModel } from './model';
 import { IJpServices } from './JpServices';
 import { askPasswd} from './components/ask_pass'
 import { IPass} from './interfaces'
 
 import { addCommands, createMenu } from './cmd_menu'
+import { setup_sql_console } from './sqlConsole'
 
 /**
  * Initialization data for the jupyterlab-sql-explorer extension.
@@ -40,7 +42,7 @@ function activate(
 ) {
     translator = translator ?? nullTranslator;
     const trans = translator.load('jupyterlab_sql_explorer');
-        
+            
     const jp_services: IJpServices = {
         app,
         editorService,
@@ -57,7 +59,9 @@ function activate(
           console.error(trans.__('Failed to load settings for jupyterlab-sql-explorer.'), reason);
         });
     }
-    
+        
+    setup_sql_console(jp_services)
+          
     // Create Sql Explorer model
     const model=new SqlModel()
     model.need_passwd.connect((_, pass_info:IPass)=>{

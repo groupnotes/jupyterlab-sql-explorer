@@ -48,7 +48,8 @@ class ConnForm extends React.Component<IConnFormProps, Partial<IDBConn>> {
   
     constructor(props:IConnFormProps) {
         super(props);
-        this.state = {...this.props.conn}
+        this.state = {...this.props.conn, db_type:'2'}
+        //if (!('db_type' in this.state) || this.state.db_type=='' ) this.state.db_type='2'
     }
 
     getValue() : IDBConn {

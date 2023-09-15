@@ -1,10 +1,18 @@
 import * as React from 'react';
 import { 
     MainAreaWidget,
-    Toolbar,
     ToolbarButton,
-    ReactWidget
+    ReactWidget,
+    setToolbar
 } from '@jupyterlab/apputils';
+
+import {
+  ABCWidgetFactory,
+  DocumentRegistry,
+  DocumentWidget,
+  IDocumentWidget,
+} from '@jupyterlab/docregistry';
+
 import { TranslationBundle } from '@jupyterlab/translation';
 import { IDisposable } from '@lumino/disposable';
 import { SplitPanel } from '@lumino/widgets';
@@ -18,16 +26,14 @@ import {
 } from '@jupyterlab/codeeditor';
 
 import { ISignal, Signal } from '@lumino/signaling';
-//import { LabIcon } from '@jupyterlab/ui-components';
 
-import { IJpServices } from './JpServices';
-import { sqlIcon as queryIcon, errorIcon } from './icons';
+import { IJpServices } from '../JpServices';
+import { sqlIcon as queryIcon, errorIcon, sqlScIcon } from '../icons';
+import { Loading } from '../components/loading'
+import { QueryModel, IQueryModel, IQueryStatus} from '../model'
+import { ITableData } from '../interfaces'
 
-//import { SingletonPanel } from './components/SingletonPanel'
-import { ResultsTable } from './components/ResultsTable'
-import { Loading } from './components/loading'
-import { IQueryModel, IQueryStatus} from './model'
-import { ITableData } from './interfaces'
+import { ResultsTable } from './ResultsTable'
 
 export interface IEditor extends IDisposable {
   readonly widget: EditorWidget;
@@ -40,9 +46,12 @@ export interface IEditor extends IDisposable {
 }
 
 export class Editor implements IEditor, IDisposable {
-  constructor(initialValue: string, editorFactory: IEditorFactoryService) {
-    this._model = new CodeEditor.Model({ value: initialValue });
-    this._widget = new EditorWidget(this._model, editorFactory);
+  constructor(
+    model: CodeEditor.IModel,
+    editorFactory: IEditorFactoryService
+  ) {
+    this._model=model
+    this._widget = new EditorWidget(model, editorFactory);
     this._model.value.changed.connect(() => {
       this._valueChanged.emit(this.value);
     }, this);
@@ -58,7 +67,6 @@ export class Editor implements IEditor, IDisposable {
     
   dispose() {
       Signal.clearData(this)
-      this._model.dispose()
       this._widget.dispose()
   }
     
@@ -103,7 +111,12 @@ export class Editor implements IEditor, IDisposable {
      if (segmentIndex === -1) {
         segmentIndex = segments.length - 1;
      }
-
+      
+     if (segments[segmentIndex].trim() === "" && 
+         segmentIndex==segments.length-1 && 
+         segmentIndex>0) {
+         segmentIndex--
+     }
      return segments[segmentIndex];
   }
 
@@ -239,14 +252,12 @@ class RunStatusComponent extends React.Component<IRunStatusProps, IRunStatusStat
         timeString += minutes + ' ' + trans.__("min");
     }
 
-    if (hours === 0 && minutes === 0) {
-        if (seconds < 10) {
-          timeString += seconds.toFixed(1) + ' '+trans.__("sec");
-        } else {
-          timeString += Math.round(seconds) + ' ' + trans.__("sec");
-        }
+    if (seconds < 10) {
+       timeString += seconds.toFixed(1) + ' '+trans.__("sec");
+    } else {
+       timeString += Math.round(seconds) + ' ' + trans.__("sec");
     }
-
+    
     return timeString;
   }
 
@@ -300,91 +311,31 @@ class RunStatus extends ReactWidget {
     private readonly _trans : TranslationBundle;
 }
 
-
-export class QueryToolbar extends Toolbar {
-    constructor(queryModel:IQueryModel, jp_services:IJpServices) {
-        super();
-        this._queryModel=queryModel
-        const {trans}=jp_services
-        
-        this.addItem(
-          'dbid',
-          new ToolbarText(this._queryModel.dbid)
-        )
-        
-        this.addItem(
-          'run',
-          new ToolbarButton({
-            iconClass: 'jp-RunIcon jp-Icon jp-Icon-16',
-            onClick: this._onRunButtonClicked,
-            tooltip: trans.__('Run Query') })
-        )
-        
-        this.addItem(
-          'stop',
-          new ToolbarButton({
-            iconClass: 'jp-StopIcon jp-Icon jp-Icon-16',
-            onClick: this._onStopButtonClicked,
-            tooltip: trans.__('Stop Query')})
-        )
-            
-        /*this.addItem(
-          'schema',
-          new ToolbarText(trans.__("default schema:") + this._queryModel.table)
-        ),*/
-        
-        this.addItem(
-          'status',
-          new RunStatus(queryModel, trans)
-        )
-    }
-    
-    get runButtonClicked() {
-        return this._runButtonClicked
-    }
-    
-    get stopButtonClicked() {
-        return this._stopButtonClicked
-    }
-
-    _onRunButtonClicked=()=>{
-        this._runButtonClicked.emit(void 0)
-    }
-    
-    _onStopButtonClicked=()=>{
-        this._stopButtonClicked.emit(void 0)
-    }
-    
-    private readonly _queryModel : IQueryModel;
-    private readonly _runButtonClicked: Signal<this, void> = new Signal(this);
-    private readonly _stopButtonClicked: Signal<this, void> = new Signal(this);
-}
-
-export class Content extends SplitPanel {
+export class SqlConsoleWidget extends SplitPanel {
     constructor(
         queryModel: IQueryModel, 
-        init_sql:string, 
+        context: DocumentRegistry.CodeContext | undefined,
+        model: CodeEditor.IModel,
         jp_services:IJpServices
     ) {
         super({orientation: 'vertical'})
+        this.title.icon = sqlScIcon;
         this.queryModel=queryModel
-        this.toolbar = new QueryToolbar(queryModel, jp_services)    
-        this.editor  = new Editor(init_sql, jp_services.editorService.factoryService );
+            
+        this.editor  = new Editor(model, jp_services.editorService.factoryService );
         this.resultsTable = new ResultsTable([], [])
-
+        
         this.addWidget(this.editor.widget);
         this.addWidget(this.resultsTable.widget);
         this.setRelativeSizes([2, 1]);
         
         this.editor.execute.connect(this.run, this)
-        this.toolbar.runButtonClicked.connect(this.run, this)
-        this.toolbar.stopButtonClicked.connect(this.stop, this)
     }
     
     dispose(): void {
         Signal.clearData(this)
         this.editor.dispose()
-        this.toolbar.dispose()
+        //this.toolbar.dispose()
         this.resultsTable.dispose()
         super.dispose()
     }
@@ -396,7 +347,7 @@ export class Content extends SplitPanel {
     run = async()=>{
        if (this._is_running) return
        const sql=this.editor.sql
-       if (sql=='') return
+       if (sql.trim() === "") return
        this._is_running=true
        this.resultsTable.setData([],[])
        const rc=await this.queryModel.query(sql)
@@ -409,22 +360,116 @@ export class Content extends SplitPanel {
     
     readonly editor: IEditor;
     private resultsTable : ResultsTable;
-    readonly toolbar: QueryToolbar;
     readonly queryModel: IQueryModel;
     private _is_running:boolean = false
 }
 
-export const newQuery = (queryModel: IQueryModel, sql:string, jp_services:IJpServices) => {
+/**
+ * A widget factory for SqlConsoleWidget.
+ */
+export class SqlConsoleWidgetFactory extends ABCWidgetFactory<
+  IDocumentWidget<SqlConsoleWidget>
+>{
+  /**
+   * Construct a new editor widget factory.
+   */
+  constructor(
+     options: DocumentRegistry.IWidgetFactoryOptions<IDocumentWidget<SqlConsoleWidget>>,
+     jp_services:IJpServices 
+  )
+  {
+    super(options);
+    this._jp_services = jp_services
+  }
+    
+  /**
+   * Create a new widget given a context.
+   */
+  protected createNewWidget(
+    context: DocumentRegistry.CodeContext
+  ): IDocumentWidget<SqlConsoleWidget> {
+    const qmodel=new QueryModel('mysql', '')        
+    const content = new SqlConsoleWidget(qmodel, context, context.model, this._jp_services);
+    const widget = new DocumentWidget({ content, context });
+    return widget;
+  }
+    
+  private _jp_services:IJpServices;
+}
+
+var sqlConsoleFactory:SqlConsoleWidgetFactory
+var toolbarFactory:any
+
+export function setup_sql_console(jp_services:IJpServices) {
+    
+    const {trans, app} = jp_services
+
+    const sqlFileType: DocumentRegistry.IFileType = {
+        name: 'sql',
+        displayName: trans.__('Sql File'),
+        extensions: ['.sql'],
+        mimeTypes: ['text/sql'],
+        contentType: 'text/plain',
+        fileFormat: 'text',
+        icon: sqlScIcon
+    };
+        
+    toolbarFactory =(wdg:IDocumentWidget<SqlConsoleWidget>)=>{
+        const sqlConsole = wdg.content
+        return [
+          { 
+              name : 'dbid',
+              widget : new ToolbarText(sqlConsole.queryModel.dbid)
+          },
+          {
+              name : 'run',
+              widget: new ToolbarButton({
+                iconClass: 'jp-RunIcon jp-Icon jp-Icon-16',
+                onClick: ()=>sqlConsole.run(),   
+                tooltip: trans.__('Run Query')})
+          },
+          { 
+              name : 'stop',
+              widget : new ToolbarButton({
+                 iconClass: 'jp-StopIcon jp-Icon jp-Icon-16',
+                 onClick: ()=>sqlConsole.stop(), 
+                 tooltip: trans.__('Stop Query')})
+          },
+          {
+              name : 'status',
+              widget : new RunStatus(sqlConsole.queryModel, jp_services.trans)
+          }  
+        ]
+    }
+        
+    sqlConsoleFactory = new SqlConsoleWidgetFactory(
+        {
+            name:  trans.__('SQL Console'),
+            modelName: 'text',
+            fileTypes: ['sql'],
+            defaultFor: ['sql'],
+            readOnly: true, 
+            toolbarFactory
+        },
+        jp_services
+    );  
+        
+    app.docRegistry.addFileType(sqlFileType);
+    app.docRegistry.addWidgetFactory(sqlConsoleFactory);
+}
+
+export function newSqlConsole(qmodel:QueryModel, init_sql:string, jp_services:IJpServices) {
     // find Widget by id
-    let id = 'jp-sql-explorer:query' + queryModel.dbid;
+    let id = 'jp-sql-explorer:query' + qmodel.dbid;
     let widget = toArray(jp_services.app.shell.widgets()).find(widget => widget.id === id);
     if (widget && !widget.isDisposed) {
        console.log("find and not disposed ", id);
-       ((widget as MainAreaWidget).content as Content).editor.appendText('\n'+sql+'\n')
+       ((widget as MainAreaWidget).content as SqlConsoleWidget).editor.appendText('\n'+init_sql+'\n')
     } else {
-       console.log("not find ", id);
-       const content = new Content(queryModel, sql, jp_services)
-       widget = new MainAreaWidget({ content, toolbar:content.toolbar});
+       const model = new CodeEditor.Model({value:init_sql}); 
+       const content = new SqlConsoleWidget(qmodel, undefined, model, jp_services) 
+       widget = new MainAreaWidget({ content});
+       setToolbar(widget, toolbarFactory)
        widget.id = id
        widget.title.icon = queryIcon;
        widget.title.label = jp_services.trans.__('SQL query');
@@ -438,3 +483,28 @@ export const newQuery = (queryModel: IQueryModel, sql:string, jp_services:IJpSer
     // Activate the widget
     jp_services.app.shell.activateById(widget.id);
 }
+
+// export const newQuery = (queryModel: IQueryModel, sql:string, jp_services:IJpServices) => {
+//     // find Widget by id
+//     let id = 'jp-sql-explorer:query' + queryModel.dbid;
+//     let widget = toArray(jp_services.app.shell.widgets()).find(widget => widget.id === id);
+//     if (widget && !widget.isDisposed) {
+//        console.log("find and not disposed ", id);
+//        ((widget as MainAreaWidget).content as Content).editor.appendText('\n'+sql+'\n')
+//     } else {
+//        console.log("not find ", id);
+//        const content = new Content(queryModel, sql, jp_services)
+//        widget = new MainAreaWidget({ content, toolbar:content.toolbar});
+//        widget.id = id
+//        widget.title.icon = queryIcon;
+//        widget.title.label = jp_services.trans.__('SQL query');
+//        widget.title.closable = true;
+//     }
+
+//     if (!widget.isAttached) {
+//       // Attach the widget to the main work area if it's not there
+//       jp_services.app.shell.add(widget, 'main');
+//     }
+//     // Activate the widget
+//     jp_services.app.shell.activateById(widget.id);
+// }
