@@ -150,7 +150,7 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
             <hr className={hrStyle}/>
         </div>
         { list_type=='root' && 
-            <ConnList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter_l} 
+            <ConnList onSelect={this._select} trans={trans} jp_services={jp_services} list={model.get_list(path)} filter={filter_l} 
                 wait={wait} onAddConn={this._add} onRefresh={this._refresh}/> }
         { list_type=='conn' && 
             <DBList onSelect={this._select} trans={trans} list={model.get_list(path)} filter={filter_l}
@@ -160,7 +160,10 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
                 wait={wait} onRefresh={this._refresh}/> }
         { list_type=='table' && 
             <ColList list={model.get_list(path)} jp_services={jp_services} filter={filter_l} onRefresh={this._refresh}
-                wait={wait} dbid={path[0].name} table={`${path[path.length-2].name}.${path[path.length-1].name}`} /> }            
+                wait={wait} 
+                dbid={path[0].name} 
+                schema={path.length<3?'':path[path.length-2].name}
+                table={path[path.length-1].name} /> }            
       </>
     );
   }

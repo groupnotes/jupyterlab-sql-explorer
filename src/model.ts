@@ -3,7 +3,7 @@ import {
     load_tree_root, load_tree_db_node, load_tree_table_node, load_tree_col_node, 
     set_pass, clear_pass,
     query, get_query, stop_query,
-    edit_conn
+    edit_conn, del_conn
 } from './handler';
 import {IDbItem, IPass, ITreeCmdRes, TApiStatus, IQueryRes, IDBConn } from './interfaces'
 
@@ -133,6 +133,17 @@ export class SqlModel {
         }
     }
     
+    del_conn = async (dbid:string)=>{
+        let rc = await del_conn(dbid)
+        if (rc.status=='OK') {
+           const idx=this._item_list.findIndex(o=>o.name==dbid)
+           if (idx>=0) this._item_list.splice(idx,1)
+           this.conn_changed.emit(dbid)
+        }else{
+           //this.need_passwd.emit(pass_info)
+        }
+    }
+    
     set_pass = async (pass_info:IPass)=>{
         let rc = await set_pass(pass_info)
         if (rc.status=='OK') {
@@ -143,8 +154,8 @@ export class SqlModel {
         }
     }
     
-    clear_pass= async ()=>{
-        await clear_pass()  
+    clear_pass= async (dbid?:string)=>{
+        await clear_pass(dbid)  
     }
     
     get need_passwd() {
@@ -179,16 +190,24 @@ export interface IQueryModel {
     schema? : string,
     query : (sql:string)=>Promise<IQueryRes>,
     conns : Array<string>,
+    isConnReadOnly: boolean,
     stop  : ()=>void,
     query_begin : ISignal<IQueryModel, void>,
     query_finish : ISignal<IQueryModel, IQueryStatus>
 }
 
+export interface IQueryModelOptions {
+    dbid?   : string, 
+    schema? : string,
+    conn_readonly?: boolean
+}
+
 export class QueryModel implements IQueryModel {
     
-    constructor(dbid?:string, schema?:string) {
-        this._dbid=dbid||''
-        this._schema=schema
+    constructor(options: IQueryModelOptions) {
+        this._dbid= options.dbid||''
+        this._schema=options.schema
+        this._conn_readonly=!!options.conn_readonly
         this._running=false
     }
     
@@ -208,6 +227,8 @@ export class QueryModel implements IQueryModel {
             // send as signal to triger passwd input
             getSqlModel().need_passwd.emit(rc.pass_info as IPass)
             this._running=false
+            const st:IQueryStatus = { status: rc.status, errmsg: 'please input passwd and try again'}
+            this._query_finish.emit(st)
             return rc;
         }
         while(rc.status=='RETRY') {
@@ -235,7 +256,7 @@ export class QueryModel implements IQueryModel {
     }
     
     set dbid(dbid:string) {
-        if (this._running) return
+        if (this._conn_readonly || this._running ) return
         this._dbid=dbid
         getSqlModel().conn_changed.emit(dbid)
     }
@@ -251,6 +272,10 @@ export class QueryModel implements IQueryModel {
     get query_finish():ISignal<IQueryModel, IQueryStatus> {
         return this._query_finish
     }
+    
+    get isConnReadOnly() {
+        return this._conn_readonly
+    }
         
     private _running:boolean;
     private _dbid : string;
@@ -260,4 +285,6 @@ export class QueryModel implements IQueryModel {
     private _query_begin = new Signal<IQueryModel, void>(this);
     private _query_finish = new Signal<IQueryModel, IQueryStatus>(this);
     private _controller!: AbortController;
+    
+    private _conn_readonly:boolean; /* can change db connection */
 }

@@ -131,8 +131,11 @@ export const load_tree_col_node = async(dbid:string, db:string, tbl:string) : Pr
 export const edit_conn = async(conn: IDBConn) : Promise<IApiRes<any>> => {
     const newObj: { [key: string]: string } = Object.entries(conn)
         .reduce((obj, [key, value]) => (value !== undefined ? { ...obj, [key]: value } : obj), {});
-    console.log(newObj)
     return await post('conns',newObj)
+}
+
+export const del_conn = async(dbid: string) : Promise<IApiRes<any>> => {
+    return await del('conns', {dbid})
 }
 
 export const set_pass = async(pass_info: IPass) : Promise<IApiRes<any>> => {
@@ -140,8 +143,8 @@ export const set_pass = async(pass_info: IPass) : Promise<IApiRes<any>> => {
     return await post('pass', { db_id, db_user, db_pass })
 }
 
-export const clear_pass = async() : Promise<IApiRes<any>> => {
-    return await del('pass', {})
+export const clear_pass = async(dbid?:string) : Promise<IApiRes<any>> => {
+    return await del('pass', {dbid:dbid||''})
 }
 
 export const query = async(sql:string, dbid:string, schema?:string, options?:RequestInit) : Promise<IQueryRes> => {

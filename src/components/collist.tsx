@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { Menu } from '@lumino/widgets';
+import { CommandRegistry } from '@lumino/commands';
+import { Clipboard } from '@jupyterlab/apputils';
 import { refreshIcon } from '@jupyterlab/ui-components'
 //import { newQuery } from '../QueryWidget'
 import { newSqlConsole } from '../sqlConsole'
@@ -31,6 +34,7 @@ type TColProps={
     list : Array<IDbItem>,
     filter: string,
     dbid : string,
+    schema : string,
     table : string,
     onRefresh: ()=>any,
     wait?: boolean
@@ -45,8 +49,32 @@ type TColState={
  */
 export class ColList extends React.Component<TColProps, TColState> {
     
-    state:TColState={
-        checked: new Set()
+    constructor(props:TColProps) {
+        super(props)
+        this._contextMenu = this._createContextMenu();
+        this.state={
+            checked: new Set()
+        }
+    }
+    
+    private _createContextMenu(): Menu {
+        const commands = new CommandRegistry();
+        const copy='copyName'
+        const copy_all='copyAll'
+        commands.addCommand(copy, {
+          label: 'Copy Column Name',
+          iconClass: 'jp-MaterialIcon jp-CopyIcon',
+          execute: this._copyToClipboard('n')
+        });
+        commands.addCommand(copy_all, {
+          label: 'Copy Column & Comment',
+          iconClass: 'jp-MaterialIcon jp-CopyIcon',
+          execute: this._copyToClipboard('all')
+        });
+        const menu = new Menu({ commands });
+        menu.addItem({ command: copy});
+        menu.addItem({ command: copy_all});
+        return menu;
     }
         
     render(): React.ReactElement {
@@ -75,7 +103,9 @@ export class ColList extends React.Component<TColProps, TColState> {
                      p=>p.name.toLowerCase().includes(filter) || 
                      (p.desc && p.desc.toLowerCase().includes(filter))
                   ).map(p=>
-                    <li onClick={this._onSelect(p)} title={p.name+'\n'+p.desc}>
+                    <li onClick={this._onSelect(p)} title={p.name+'\n'+p.desc}  
+                        onContextMenu={(event) => this._handleContextMenu(event, p)}
+                        >
                         <input type='checkbox' checked={checked.has(p.name)} />
                         <span className='name'>{p.name}</span>
                         <span className='memo'>{p.desc}</span></li>)}
@@ -83,6 +113,18 @@ export class ColList extends React.Component<TColProps, TColState> {
                 </ul>
              }
         </>)
+    }
+    
+    private _handleContextMenu = (event:React.MouseEvent<any>, item:IDbItem) => {
+        event.preventDefault();
+        this._sel_item = item
+        this._contextMenu.open(event.clientX, event.clientY);
+    }
+    
+    private _copyToClipboard=(t:string)=>()=>{
+        const {name, desc}=this._sel_item
+        if (t=='all' && desc!='') Clipboard.copyToSystem(`${name} /* ${desc} */`);
+        else Clipboard.copyToSystem(name);
     }
     
     private _select_all=async (ev: any)=>{
@@ -110,17 +152,23 @@ export class ColList extends React.Component<TColProps, TColState> {
         
     private _sql_query = ( ev: any) => {
         let {checked}=this.state
-        const {dbid, table}=this.props
+        const {dbid, schema, table, list}=this.props
+        
+        const col_names:{[key: string]:string}=list.reduce((acc, {name, desc}) => ({...acc, [name]: desc}), {});
+        
         let sql:string='SELECT '
         if (checked.size==0) {
             sql +="*"
         }else{
             let cols=new Array<string>()
-            checked.forEach(c=>cols.push(`t.${c}`))
-            sql += cols.join(',') 
+            checked.forEach(c=>cols.push(`    t.${c} /* ${col_names[c]} */`))
+            sql += '\n' + cols.join(',\n') 
         }
-        sql += "\nFROM " + table + " t LIMIT 200"
-        const qmodel=new QueryModel(dbid, table)
+        sql += "\nFROM " + (schema!=''?schema+'.':'')+table + " t LIMIT 200"
+        const qmodel=new QueryModel({dbid, conn_readonly:true})
         newSqlConsole(qmodel, sql, this.props.jp_services)
     }
+    
+    private readonly _contextMenu: Menu;
+    private _sel_item!: IDbItem;
 }

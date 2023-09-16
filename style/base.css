@@ -6,7 +6,8 @@
 
 .jp-Sql-Exp-toolbar-text {
   font-weight: 700;
-  align-items: center
+  align-items: center;
+  line-height: 24px;  
 }
 
 .jp-Sql-Exp-toolbar-errmsg,

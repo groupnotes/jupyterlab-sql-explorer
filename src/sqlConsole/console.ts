@@ -157,7 +157,7 @@ export class SqlConsoleWidgetFactory extends ABCWidgetFactory<
   protected createNewWidget(
     context: DocumentRegistry.CodeContext
   ): IDocumentWidget<SqlConsoleWidget> {
-    const qmodel=new QueryModel()        
+    const qmodel=new QueryModel({})        
     const content = new SqlConsoleWidget(qmodel, context, context.model, this._jp_services);
     const widget = new DocumentWidget({ content, context });
     return widget;
@@ -243,16 +243,17 @@ export function newSqlConsole(qmodel:QueryModel, init_sql:string, jp_services:IJ
     let id = 'jp-sql-explorer:query' + qmodel.dbid;
     let widget = toArray(jp_services.app.shell.widgets()).find(widget => widget.id === id);
     if (widget && !widget.isDisposed) {
-       console.log("find and not disposed ", id);
-       ((widget as MainAreaWidget).content as SqlConsoleWidget).editor.appendText('\n'+init_sql+'\n')
+       const sql:string=`;\n\n${init_sql}\n`; 
+       ((widget as MainAreaWidget).content as SqlConsoleWidget).editor.appendText(sql)
     } else {
-       const model = new CodeEditor.Model({value:init_sql}); 
+       const sql:string=`-- conn: ${qmodel.dbid}\n\n${init_sql}\n`; 
+       const model = new CodeEditor.Model({value:sql}); 
        const content = new SqlConsoleWidget(qmodel, undefined, model, jp_services) 
        widget = new MainAreaWidget({ content});
        setToolbar(widget, toolbarFactory)
        widget.id = id
        widget.title.icon = queryIcon;
-       widget.title.label = qmodel.dbid //jp_services.trans.__('SQL query');
+       widget.title.label = qmodel.isConnReadOnly? qmodel.dbid : jp_services.trans.__('SQL query');
        widget.title.closable = true;
     }
 

@@ -39,12 +39,6 @@ class DbTableHandler(APIHandler):
     @tornado.web.authenticated
     def get(self):
         dbid=self.get_argument('dbid')
-        if dbid=='sqlite':
-            data=[]
-            for i in range(10000):
-                data.append({'name': str(i), 'desc': f'desc {i}', 'type': 'db'})
-            self.finish(json.dumps({'data': data}))
-            return
         database = self.get_argument('db', None)
         try:
             st, db_user=engine.check_pass(dbid)
@@ -112,9 +106,12 @@ class QueryHandler(APIHandler):
     async def post(self):
         qdata = self.get_json_body()
         try:
-            # db.set_log(self.log)
-            taskid = await task.create_query_task(db.query_header, qdata['dbid'], qdata['sql'])
-            self.finish(json.dumps({'error': 'RETRY', 'data': taskid}))
+            st, db_user=engine.check_pass(qdata['dbid'])
+            if not st:
+                self.finish(json.dumps({'error': 'NEED-PASS', 'pass_info': {'db_id': qdata['dbid'], 'db_user': db_user}}))
+            else:
+                taskid = await task.create_query_task(db.query_header, qdata['dbid'], qdata['sql'])
+                self.finish(json.dumps({'error': 'RETRY', 'data': taskid}))
         except Exception as err:
             self.log.error(err)
             self.finish(json.dumps({'error': str(err)}))

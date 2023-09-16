@@ -228,7 +228,7 @@ def set_pass(dbid: str, user: str, pwd: str)->(bool, str):
 
 def clear_pass(dbid: str)->None:
     global _temp_pass_store
-    if dbid is None:
+    if dbid is None or dbid=='':
         _temp_pass_store=dict()
-    else:
+    elif dbid in _temp_pass_store:
         del _temp_pass_store[dbid]

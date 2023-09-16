@@ -69,12 +69,13 @@ class RunStatusComponent extends React.Component<IRunStatusOptions, IRunStatusSt
       const {dbid, running, time, errmsg}=this.state
       const {trans, model}=this.props;
       return <>
-          <div className="jp-HTMLSelect jp-DefaultStyle jp-Notebook-toolbarCellTypeDropdown">
-              <select onChange={this._onChangeDB} value={dbid}>
-                  <option value=''>{trans.__('NO SELECT')}</option>
-                  { model.conns.map( n=> <option>{n}</option>)}
-              </select>
-          </div>
+          {model.isConnReadOnly ? <span className='jp-Sql-Exp-toolbar-text'>{dbid}</span> :
+              <div className="jp-HTMLSelect jp-DefaultStyle jp-Notebook-toolbarCellTypeDropdown">
+                  <select onChange={this._onChangeDB} value={dbid}>
+                      <option value=''>{trans.__('NO SELECT')}</option>
+                      { model.conns.map( n=> <option>{n}</option>)}
+                  </select>
+              </div>}
           { running==1 && <Loading/> }
           { running==2 && <>
               <errorIcon.react tag="span" width="14px" height="14px" className='jp-Sql-Exp-toolbar-icon'/>

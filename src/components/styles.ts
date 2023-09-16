@@ -21,7 +21,11 @@ export const listStyle = style({
          $nest: {
              '&:hover': {
                  backgroundColor:'#ddd'
-             }
+             },
+             
+             '&:active': {
+                 backgroundColor:'#1072ae99'
+             },
          }
       },
       '&>li>span:first-child': {
