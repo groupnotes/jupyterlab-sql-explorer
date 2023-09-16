@@ -7,6 +7,13 @@ import {
 } from './handler';
 import {IDbItem, IPass, ITreeCmdRes, TApiStatus, IQueryRes, IDBConn } from './interfaces'
 
+var sqlModelInst:SqlModel
+
+export function getSqlModel():SqlModel {
+    if (!sqlModelInst) sqlModelInst=new SqlModel()
+    return sqlModelInst
+}
+
 export class SqlModel {
 
     constructor(init?:Array<IDbItem>) {
@@ -116,10 +123,11 @@ export class SqlModel {
     }
     
     add_conn = async (conn:IDBConn)=>{
-        console.log(conn)
         let rc = await edit_conn(conn)
         if (rc.status=='OK') {
-           this.conn_changed.emit(conn.db_id) 
+           const { name, db_id}=conn
+           this._item_list.push({ type:'conn', name:db_id, desc: name, next:false})
+           this.conn_changed.emit(conn.db_id)
         }else{
            //this.need_passwd.emit(pass_info)
         }
@@ -167,9 +175,10 @@ export interface IQueryStatus {
 }
 
 export interface IQueryModel {
-    dbid  : string, 
-    table : string,
+    dbid   : string, 
+    schema? : string,
     query : (sql:string)=>Promise<IQueryRes>,
+    conns : Array<string>,
     stop  : ()=>void,
     query_begin : ISignal<IQueryModel, void>,
     query_finish : ISignal<IQueryModel, IQueryStatus>
@@ -177,23 +186,43 @@ export interface IQueryModel {
 
 export class QueryModel implements IQueryModel {
     
-    constructor(dbid:string, table:string) {
-        this._dbid=dbid
-        this._table=table
+    constructor(dbid?:string, schema?:string) {
+        this._dbid=dbid||''
+        this._schema=schema
+        this._running=false
     }
     
     async query(sql: string):Promise<IQueryRes> {
+        if (this._running) return {status:'ERR', message: 'has running'};
+        if (!this._dbid) {
+            const st:IQueryStatus = { status: 'ERR', errmsg: 'please select the db connnection first!'}
+            this._query_finish.emit(st)
+            return {status:'ERR'};
+        }
+        this._running=true
         this._controller = new AbortController();
         this._query_begin.emit()
         const options = { signal: this._controller.signal };
-        let rc = await query(this.dbid, this.table, sql, options)
+        let rc = await query(sql, this.dbid, this.schema, options)
+        if (rc.status == 'NEED-PASS') {
+            // send as signal to triger passwd input
+            getSqlModel().need_passwd.emit(rc.pass_info as IPass)
+            this._running=false
+            return rc;
+        }
         while(rc.status=='RETRY') {
             this._taskid = rc.data as string, 
             rc = await get_query(this._taskid, options)
         }
         const st:IQueryStatus = { status: rc.status, errmsg: rc.message}
         this._query_finish.emit(st)
+        this._running=false
         return rc
+    }
+    
+    get conns():Array<string>{
+        const model=getSqlModel()
+        return model.get_list([]).map(o=>o.name)
     }
     
     stop=()=>{
@@ -205,8 +234,14 @@ export class QueryModel implements IQueryModel {
         return this._dbid
     }
     
-    get table() {
-        return this._table
+    set dbid(dbid:string) {
+        if (this._running) return
+        this._dbid=dbid
+        getSqlModel().conn_changed.emit(dbid)
+    }
+    
+    get schema() {
+        return this._schema
     }
     
     get query_begin():ISignal<IQueryModel, void>{
@@ -217,8 +252,9 @@ export class QueryModel implements IQueryModel {
         return this._query_finish
     }
         
+    private _running:boolean;
     private _dbid : string;
-    private _table: string;
+    private _schema?: string;
     private _taskid!: string;
     
     private _query_begin = new Signal<IQueryModel, void>(this);

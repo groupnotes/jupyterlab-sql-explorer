@@ -4,22 +4,31 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
+import {
+  IDocumentWidget
+} from '@jupyterlab/docregistry';
+
+import { 
+    WidgetTracker
+} from '@jupyterlab/apputils';
+
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { IMainMenu } from '@jupyterlab/mainmenu';
+import { IDocumentManager } from '@jupyterlab/docmanager';
 //import { DocumentRegistry } from '@jupyterlab/docregistry';
 //import { IStatusBar } from '@jupyterlab/statusbar';
 
 import { SqlWidget } from './SqlWidget';
 import { sqlIcon} from './icons';
-import { SqlModel } from './model';
+import { getSqlModel } from './model';
 import { IJpServices } from './JpServices';
 import { askPasswd} from './components/ask_pass'
 import { IPass} from './interfaces'
 
 import { addCommands, createMenu } from './cmd_menu'
-import { setup_sql_console } from './sqlConsole'
+import { setup_sql_console, SqlConsoleWidget, SQL_CONSOLE_FACTORY} from './sqlConsole'
 
 /**
  * Initialization data for the jupyterlab-sql-explorer extension.
@@ -27,7 +36,7 @@ import { setup_sql_console } from './sqlConsole'
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-sql-explorer:plugin',
   autoStart: true,
-  requires: [ILayoutRestorer, IEditorServices],
+  requires: [ILayoutRestorer, IEditorServices, IDocumentManager],
   optional: [IMainMenu, ISettingRegistry, ITranslator],
   activate
 };
@@ -36,6 +45,7 @@ function activate(
     app: JupyterFrontEnd, 
     restorer: ILayoutRestorer,
     editorService: IEditorServices,
+    docManager:IDocumentManager,
     mainMenu: IMainMenu | null,
     settingRegistry: ISettingRegistry | null,
     translator: ITranslator | null
@@ -46,7 +56,8 @@ function activate(
     const jp_services: IJpServices = {
         app,
         editorService,
-        trans
+        trans,
+        docManager
     }
 
     if (settingRegistry) {
@@ -60,10 +71,14 @@ function activate(
         });
     }
         
-    setup_sql_console(jp_services)
+    const tracker = new WidgetTracker<IDocumentWidget<SqlConsoleWidget>>({
+        namespace:'jupyterlab_sql_explorer'
+    });
+    
+    setup_sql_console(jp_services, tracker)
           
     // Create Sql Explorer model
-    const model=new SqlModel()
+    const model=getSqlModel()
     model.need_passwd.connect((_, pass_info:IPass)=>{
         askPasswd(pass_info, model, trans)
     })
@@ -85,11 +100,19 @@ function activate(
     // Let the application restorer track the running panel for restoration of
     // application state (e.g. setting the running panel as the current side bar
     // widget).
-    restorer.add(sqlPlugin, 'sql-explorer-sessions');
+    if (restorer) restorer.add(sqlPlugin, 'sql-explorer-sessions');
 
     // Rank has been chosen somewhat arbitrarily to give priority to the running
     // sessions widget in the sidebar.
     app.shell.add(sqlPlugin, 'left', { rank: 200 });
+        
+    if (restorer) {
+        restorer.restore(tracker, {
+          command: 'docmanager:open',
+          args: widget => ({ path: widget.context.path, factory: SQL_CONSOLE_FACTORY }),
+          name: widget => widget.context.path
+        });
+    }
 }
 
 export default plugin;

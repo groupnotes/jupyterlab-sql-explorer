@@ -106,6 +106,11 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
       this.props.model.passwd_settled.connect((_, db_id)=>{
           this._refresh()
       }, this)
+      
+      this.props.model.conn_changed.connect(()=>{
+          this.forceUpdate()
+      }, this)
+      
       let {path}=this.state
       const rc= await this.props.model.load_path(path)
       if (!rc) return

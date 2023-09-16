@@ -144,8 +144,8 @@ export const clear_pass = async() : Promise<IApiRes<any>> => {
     return await del('pass', {})
 }
 
-export const query = async(dbid:string, table:string, sql:string, options?:RequestInit) : Promise<IQueryRes> => {
-    return await post('query', { dbid, sql}, options)
+export const query = async(sql:string, dbid:string, schema?:string, options?:RequestInit) : Promise<IQueryRes> => {
+    return await post('query', {sql, dbid }, options)
 }
 
 export const get_query = async(taskid:string, options?:RequestInit) : Promise<IQueryRes> => {

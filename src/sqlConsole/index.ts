@@ -1,1 +1,1 @@
-export * from './sqlConsole';
+export * from './console'
