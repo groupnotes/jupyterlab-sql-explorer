@@ -5,10 +5,10 @@ import { Clipboard } from '@jupyterlab/apputils';
 import { refreshIcon } from '@jupyterlab/ui-components'
 //import { newQuery } from '../QueryWidget'
 import { newSqlConsole } from '../sqlConsole'
-import { style } from 'typestyle';
+import { style} from 'typestyle';
 import { IDbItem } from '../interfaces'
 import { queryIcon } from '../icons';
-import { tbStyle, listStyle, hrStyle } from './styles';
+import { tbStyle, listStyle, hrStyle, activeStyle} from './styles';
 import { ActionBtn } from './ActionBtn'
 import { IJpServices } from '../JpServices';
 import { QueryModel} from '../model';
@@ -41,7 +41,8 @@ type TColProps={
 }
 
 type TColState={
-    checked: Set<string>
+    checked: Set<string>,
+    sel_name?: string
 }
 
 /**
@@ -80,7 +81,7 @@ export class ColList extends React.Component<TColProps, TColState> {
     render(): React.ReactElement {
         const {jp_services, list, filter, wait, onRefresh}=this.props
         const {trans}=jp_services
-        const {checked}=this.state
+        const {checked, sel_name}=this.state
         const all = new Set<string>(list.map(p=>p.name))
         return (
         <>
@@ -103,7 +104,8 @@ export class ColList extends React.Component<TColProps, TColState> {
                      p=>p.name.toLowerCase().includes(filter) || 
                      (p.desc && p.desc.toLowerCase().includes(filter))
                   ).map(p=>
-                    <li onClick={this._onSelect(p)} title={p.name+'\n'+p.desc}  
+                    <li className={sel_name==p.name?activeStyle:''}
+                        onClick={this._onSelect(p)} title={p.name+'\n'+p.desc}  
                         onContextMenu={(event) => this._handleContextMenu(event, p)}
                         >
                         <input type='checkbox' checked={checked.has(p.name)} />
@@ -118,6 +120,7 @@ export class ColList extends React.Component<TColProps, TColState> {
     private _handleContextMenu = (event:React.MouseEvent<any>, item:IDbItem) => {
         event.preventDefault();
         this._sel_item = item
+        this.setState({sel_name:item.name})
         this._contextMenu.open(event.clientX, event.clientY);
     }
     
@@ -136,7 +139,7 @@ export class ColList extends React.Component<TColProps, TColState> {
         }else{
             checked=new Set<string>(list.map(p=>p.name))
         }
-        this.setState({checked})
+        this.setState({checked, sel_name:''})
     }
     
     private _onSelect=(item: IDbItem)=>async (ev: React.MouseEvent<HTMLLIElement, MouseEvent>)=>{
@@ -147,7 +150,7 @@ export class ColList extends React.Component<TColProps, TColState> {
         }else{
             checked.add(name)
         }
-        this.setState({checked})
+        this.setState({checked, sel_name:''})
     }
         
     private _sql_query = ( ev: any) => {

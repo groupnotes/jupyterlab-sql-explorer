@@ -49,6 +49,11 @@ export const listStyle = style({
     }
 });
 
+export const activeStyle = style({
+    color: 'var(--jp-ui-inverse-font-color1)',
+    background: 'var(--jp-brand-color1)'
+})
+
 export const divListStyle = style({
      margin:0,
      padding: 0,

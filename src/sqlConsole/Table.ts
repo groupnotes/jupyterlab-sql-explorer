@@ -38,6 +38,8 @@ export class Table implements IDisposable {
             columnHeaderHeight: 36
         }
     });
+    const currentTheme='dark';
+    this._grid.node.classList.add('jp-DataGrid', `jp-mod-${currentTheme}-theme`);  
     this._grid.dataModel = model;
     this._grid.keyHandler = new BasicKeyHandler();
     this._grid.mouseHandler = new BasicMouseHandler();

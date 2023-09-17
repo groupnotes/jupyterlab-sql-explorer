@@ -10,7 +10,7 @@ import AutoSizer from "../auto_resizer";
 import { IDbItem } from '../interfaces'
 import { IJpServices } from '../JpServices';
 import { queryIcon, connIcon, sqlIcon, tabIcon, connAddIcon } from '../icons';
-import { tbStyle, listStyle, hrStyle, divListStyle} from './styles';
+import { tbStyle, listStyle, hrStyle, divListStyle, activeStyle} from './styles';
 import { ActionBtn } from './ActionBtn'
 import { getSqlModel, QueryModel } from '../model'
 import { newSqlConsole} from '../sqlConsole'
@@ -32,11 +32,12 @@ type ConnListProps= ListProps & { onAddConn: ()=>any}
 /**
  * React component for rendering a panel for performing Table operations.
  */
-export class ConnList extends React.Component<ConnListProps> {
+export class ConnList extends React.Component<ConnListProps, {sel_name?:string}> {
     
     constructor(props:ConnListProps) {
         super(props)
         this._contextMenu = this._createContextMenu();
+        this.state={}
     }
     
     private _createContextMenu(): Menu {
@@ -75,6 +76,7 @@ export class ConnList extends React.Component<ConnListProps> {
     render():React.ReactElement {
        const {onSelect, list, onAddConn, onRefresh, filter, jp_services}=this.props
        const {trans}=jp_services as IJpServices
+       const {sel_name}=this.state
        return (
         <>
             <div className={tbStyle}>
@@ -89,14 +91,12 @@ export class ConnList extends React.Component<ConnListProps> {
                     p.name.toLowerCase().includes(filter) || 
                     (p.desc && p.desc.toLowerCase().includes(filter))
               ).map((p,idx)=>
-                <li key={idx} onClick={onSelect(p)} title={p.name+'\n'+p.desc} 
+                <li key={idx} className={sel_name==p.name ? activeStyle : ''}
+                    onClick={onSelect(p)} title={p.name+'\n'+p.desc} 
                     onContextMenu={(event) => this._handleContextMenu(event, p)}>
                     <connIcon.react tag="span" width="16px" height="16px"/>
                     <span className='name'>{p.name}</span>
                     <span className='memo'>{p.desc}</span>
-                    <span>
-                        <connIcon.react tag="span" width="16px" height="16px"/>    
-                    </span>
                 </li>)}
             </ul>
         </>
@@ -107,6 +107,7 @@ export class ConnList extends React.Component<ConnListProps> {
         this._sel_item = item
         this._contextMenu.open(event.clientX, event.clientY);
         event.preventDefault();
+        this.setState({sel_name:item.name})
     }
     
     private _del_conn=async()=>{
