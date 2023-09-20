@@ -77,11 +77,10 @@ class RunStatusComponent extends React.Component<IRunStatusOptions, IRunStatusSt
                   </select>
               </div>}
           { running==1 && <Loading/> }
-          { running==2 && <>
-              <errorIcon.react tag="span" width="14px" height="14px" className='jp-Sql-Exp-toolbar-icon'/>
-              <span className='jp-Sql-Exp-toolbar-errmsg' onClick={this._showDetail}>{errmsg}</span>
-            </>}
-          { time!=0 && <span className='jp-Sql-Exp-toolbar-timer'>  {trans.__('elapsed time')}：{this.convertMilliseconds(time)}</span>}
+          { running==2 && <errorIcon.react tag="span" width="14px" height="14px" className='jp-Sql-Exp-toolbar-icon'/>}
+          { time!=0 && 
+              <span className='jp-Sql-Exp-toolbar-timer'>  {trans.__('elapsed time')}：{this.convertMilliseconds(time)}</span> }
+          { running==2 && <span className='jp-Sql-Exp-toolbar-errmsg' onClick={this._showDetail}>{errmsg}</span>}
       </>
   }
     

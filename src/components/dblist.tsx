@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Menu } from '@lumino/widgets';
+import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { CommandRegistry } from '@lumino/commands';
 import { TranslationBundle } from '@jupyterlab/translation';
 import { refreshIcon, deleteIcon, clearIcon } from '@jupyterlab/ui-components'
@@ -111,7 +112,17 @@ export class ConnList extends React.Component<ConnListProps, {sel_name?:string}>
     }
     
     private _del_conn=async()=>{
-        getSqlModel().del_conn(this._sel_item.name)
+        const {trans}=this.props.jp_services as IJpServices
+        const {name}=this._sel_item
+        showDialog({
+            title: trans.__('Are You Sure?'),
+            body: trans.__('Delete Database Connection：') + name,
+            buttons: [Dialog.okButton(), Dialog.cancelButton()]
+        }).then(result => {
+            if (result.button.accept) {
+              getSqlModel().del_conn(name)
+            }
+        });
     }
     
     private _clear_pass=()=>{

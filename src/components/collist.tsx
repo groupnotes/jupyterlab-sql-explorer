@@ -116,7 +116,7 @@ export class ColList extends React.Component<TColProps, TColState> {
              }
         </>)
     }
-    
+    //jp-DirListing-item jp-mod-selected"
     private _handleContextMenu = (event:React.MouseEvent<any>, item:IDbItem) => {
         event.preventDefault();
         this._sel_item = item

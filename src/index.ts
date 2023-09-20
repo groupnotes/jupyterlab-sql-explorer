@@ -9,7 +9,8 @@ import {
 } from '@jupyterlab/docregistry';
 
 import { 
-    WidgetTracker
+    WidgetTracker,
+    IThemeManager,
 } from '@jupyterlab/apputils';
 
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
@@ -28,7 +29,7 @@ import { askPasswd} from './components/ask_pass'
 import { IPass} from './interfaces'
 
 import { addCommands, createMenu } from './cmd_menu'
-import { setup_sql_console, SqlConsoleWidget, SQL_CONSOLE_FACTORY} from './sqlConsole'
+import { setup_sql_console, SqlConsoleWidget, SQL_CONSOLE_FACTORY, get_theme} from './sqlConsole'
 
 /**
  * Initialization data for the jupyterlab-sql-explorer extension.
@@ -37,7 +38,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-sql-explorer:plugin',
   autoStart: true,
   requires: [ILayoutRestorer, IEditorServices, IDocumentManager],
-  optional: [IMainMenu, ISettingRegistry, ITranslator],
+  optional: [IMainMenu, ISettingRegistry, IThemeManager, ITranslator],
   activate
 };
 
@@ -48,6 +49,7 @@ function activate(
     docManager:IDocumentManager,
     mainMenu: IMainMenu | null,
     settingRegistry: ISettingRegistry | null,
+    themeManager:  IThemeManager | null,
     translator: ITranslator | null
 ) {
     translator = translator ?? nullTranslator;
@@ -57,7 +59,8 @@ function activate(
         app,
         editorService,
         trans,
-        docManager
+        docManager,
+        themeManager
     }
 
     if (settingRegistry) {
@@ -112,6 +115,17 @@ function activate(
           args: widget => ({ path: widget.context.path, factory: SQL_CONSOLE_FACTORY }),
           name: widget => widget.context.path
         });
+    }
+        
+    // Keep the themes up-to-date.
+    const updateThemes = () => {
+       const theme=get_theme(themeManager)
+       tracker.forEach( sqlConsoleWdg => {
+           sqlConsoleWdg.content.theme = theme;        
+       });
+    };
+    if (themeManager) {
+       themeManager.themeChanged.connect(updateThemes);
     }
 }
 

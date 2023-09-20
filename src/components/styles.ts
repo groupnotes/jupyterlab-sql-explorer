@@ -5,6 +5,12 @@ export const tbStyle = style({
     paddingBottom: 0
 })
 
+
+export const activeStyle = style({
+    color: 'var(--jp-ui-inverse-font-color1)',
+    background: 'var(--jp-brand-color1)'
+})
+
 export const listStyle = style({
     listStyleType: 'none',
     margin: 0,
@@ -19,8 +25,8 @@ export const listStyle = style({
          paddingRight:10,
          userSelect: 'none',
          $nest: {
-             '&:hover': {
-                 backgroundColor:'#ddd'
+             [`&:hover:not(.${activeStyle})`]: {
+                 background: 'var(--jp-layout-color2)'
              },
              
              '&:active': {
@@ -45,14 +51,14 @@ export const listStyle = style({
        },
       '&>li>input': {
          verticalAlign: 'middle'
-       }
+       },
+        
+      [`&>li.${activeStyle} .jp-icon-selectable[fill]`]: {
+          fill: '#fff'
+      }
+        
     }
 });
-
-export const activeStyle = style({
-    color: 'var(--jp-ui-inverse-font-color1)',
-    background: 'var(--jp-brand-color1)'
-})
 
 export const divListStyle = style({
      margin:0,
@@ -66,7 +72,7 @@ export const divListStyle = style({
      alignItems: 'center',
      $nest: {
       '&:hover': {
-          backgroundColor:'#ddd'
+          background: 'var(--jp-layout-color2)'
       },
       '&>span:first-child': {
          marginRight: 5,

@@ -43,7 +43,7 @@ const navStyle = style({
                     verticalAlign: 'middle',
                     $nest: {
                         '&:hover':{
-                         backgroundColor: '#ccc'
+                           backgroundColor: 'var(--jp-layout-color2)'
                         }
                     }
                 }

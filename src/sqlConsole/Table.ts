@@ -1,35 +1,30 @@
 import { IDisposable } from '@lumino/disposable';
 
+import { CommandRegistry } from '@lumino/commands';
+
 import { Menu} from '@lumino/widgets';
 
 import {
   DataModel,
   DataGrid,
   TextRenderer,
-  CellRenderer,
+  //CellRenderer,
   BasicKeyHandler,
   BasicMouseHandler,
+  BasicSelectionModel  
 } from '@lumino/datagrid';
 
-import { ISignal, Signal } from '@lumino/signaling';
-
-import * as DataGridExtensions from '../DataGridExtensions';
-
-export namespace Table {
-  export interface IOptions {
-    contextMenu: Menu;
-  }
+namespace CommandIds {
+    export const copyToClipboard = 'copy-selection-to-clipboard';
 }
 
-namespace Colors {
-  export const unselectedBackgroundColor = 'white';
-  export const selectedBackgroundColor = '#2196f3';
-  export const unselectedTextColor = 'black';
-  export const selectedTextColor = 'white';
+namespace Table {
+    export const IOptions : {
+    }
 }
 
 export class Table implements IDisposable {
-  constructor(model: TableDataModel, options: Table.IOptions) {
+  constructor(model: TableDataModel, options?:Table.IOptions) {
     this._grid = new DataGrid({
         defaultSizes: {
             rowHeight: 24,
@@ -38,187 +33,85 @@ export class Table implements IDisposable {
             columnHeaderHeight: 36
         }
     });
-    const currentTheme='dark';
-    this._grid.node.classList.add('jp-DataGrid', `jp-mod-${currentTheme}-theme`);  
+    
+    this.theme='light'
+      
     this._grid.dataModel = model;
     this._grid.keyHandler = new BasicKeyHandler();
     this._grid.mouseHandler = new BasicMouseHandler();
-    this._options = options;
-    this._selectionManager = new DataGridExtensions.SelectionManager(model);
-    this._init()
+    this._grid.selectionModel = new BasicSelectionModel({ dataModel:model });  
+    this._grid.node.addEventListener('contextmenu', this._onContextMenu);
+    this._contextMenu=this._createContextMenu()
   }
-  
-  _init=()=>{
     
-    this._selectionManager.selectionChanged.connect(this._updateRenderers, this);
-
-    this._clickEventHandler = DataGridExtensions.addMouseEventListener(
-      'click',
-      this._grid,
-      this._onClick
-    );
-
-    this._contextMenuEventHandler = DataGridExtensions.addMouseEventListener(
-      'contextmenu',
-      this._grid,
-      this._onContextMenu
-    );
-
-    this._dblclickEventHandler = DataGridExtensions.addMouseEventListener(
-      'dblclick',
-      this._grid,
-      this._onDoubleClick
-    );
-
-    this._fitColumnWidths();
+  private _createContextMenu(): Menu {
+    const commands = new CommandRegistry();
+    commands.addCommand(CommandIds.copyToClipboard, {
+      label: __tran('Copy Selection'),
+      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      execute: () => this._copySelectionToClipboard()
+    });
+    const menu = new Menu({ commands });
+    menu.addItem({ command: CommandIds.copyToClipboard });
+    return menu;
   }
+
+  private _copySelectionToClipboard(): void {
+    this._grid.copyToClipboard()
+  }  
+    
+  private _onContextMenu=(event: MouseEvent)=>{
+    const {clientX, clientY}=event
+    this._contextMenu.open(clientX, clientY);
+    event.preventDefault();  
+  }  
+    
+  set theme(th:string){
+      let renderer:TextRenderer;
+      if (th=='dark') {
+          this._grid.style = Private.DARK_STYLE;
+          renderer = new TextRenderer({textColor: '#F3F3F3'});
+      }else{
+          this._grid.style = Private.LIGHT_STYLE;
+          renderer = new TextRenderer({textColor: '#131313'});
+      }
+      this._updateRenderer(renderer)
+  }
+    
+  private _updateRenderer(renderer:TextRenderer): void {
+    this._grid.cellRenderers.update({
+      body: renderer,
+      'column-header': renderer,
+      'corner-header': renderer,
+      'row-header': renderer
+    });
+  }  
     
   set dataModel(model:TableDataModel) {
       this._grid.dataModel = model;
-      this._selectionManager.selectionChanged.disconnect(this._updateRenderers, this)
-      this._selectionManager = new DataGridExtensions.SelectionManager(model);
-      this._init();
+      this._grid.selectionModel = new BasicSelectionModel({ dataModel:model }); 
   }
 
   get widget(): DataGrid {
     return this._grid;
   }
 
-  get selection(): DataGridExtensions.BodyCellIndex | null {
-    return this._selectionManager.selection;
-  }
-
-  get selectionValue(): any | null {
-    const selection = this.selection;
-    if (selection !== null) {
-      return this.getCellValue(selection);
-    }
-    return null;
+  get selection():Array<any> {
+    //toArray(this._selectionModel.selections());
+    return []
   }
 
   get isDisposed(): boolean {
-    return this._isDisposed;
-  }
-
-  get dblclickSignal(): ISignal<this, DataGridExtensions.BodyCellIndex> {
-    return this._dblclickSignal;
-  }
-
-  getCellValue(cellIndex: DataGridExtensions.BodyCellIndex): any {
-    const { rowIndex, columnIndex } = cellIndex;
-    const value = this._grid.dataModel!.data('body', rowIndex, columnIndex);
-    return value;
+    return this._grid.isDisposed;
   }
 
   dispose(): void {
-    this._clickEventHandler.dispose();
-    this._contextMenuEventHandler.dispose();
-    this._dblclickEventHandler.dispose();
-    if (this._grid.keyHandler!=null) this._grid.keyHandler.dispose();
-    if (this._grid.mouseHandler!=null) this._grid.mouseHandler.dispose();
+    this._grid.node.removeEventListener('contextmenu', this._onContextMenu);
     this._grid.dispose();
-    this._isDisposed = true;
-  }
-
-  private _fitColumnWidths() {
-    DataGridExtensions.fitColumnWidths(this._grid, new TextRenderer());
-  }
-
-  private _onClick=(event: DataGridExtensions.GridMouseEvent)=>{
-    const { row, column } = event;
-    this._updateSelection(row, column);
-  }
-
-  private _onContextMenu=(event: DataGridExtensions.GridMouseEvent)=>{
-    const { row, column, rawEvent } = event;
-    this._updateSelection(row, column);
-    if (this._isInBody(row, column)) {
-      this._options.contextMenu.open(rawEvent.clientX, rawEvent.clientY);
-      rawEvent.preventDefault();
-    }
-  }
-
-  private _onDoubleClick=(event: DataGridExtensions.GridMouseEvent)=> {
-    const { row, column } = event;
-    if (this._isInBody(row, column)) {
-      const cellIndex = {
-        rowIndex: row.index!,
-        columnIndex: column.index!
-      };
-      this._dblclickSignal.emit(cellIndex);
-    }
-  }
-
-  private _updateSelection(
-    row: DataGridExtensions.Row,
-    column: DataGridExtensions.Column
-  ) {
-    if (this._isInBody(row, column)) {
-      this._selectionManager.selection = {
-        rowIndex: row.index!,
-        columnIndex: column.index!
-      };
-    } else {
-      this._selectionManager.selection = null;
-    }
-  }
-
-  private _isInBody(
-    row: DataGridExtensions.Row,
-    column: DataGridExtensions.Column
-  ) {
-    return (
-      row.section === 'row' &&
-      column.section === 'column' &&
-      row.index !== null &&
-      column.index !== null
-    );
-  }
-
-  private _updateRenderers = ():void => {
-    const renderer = this._textRendererForSelection(
-      this._selectionManager.selection
-    );
-    this._grid.cellRenderers.update({ body: renderer });
-  }
-
-  private _textRendererForSelection(
-    selectedCell: DataGridExtensions.BodyCellIndex | null
-  ): CellRenderer {
-    let backgroundColor;
-    let textColor;
-    if (selectedCell === null) {
-      backgroundColor = Colors.unselectedBackgroundColor;
-      textColor = Colors.unselectedTextColor;
-    } else {
-      const selectedRow = selectedCell.rowIndex;
-      const selectedColumn = selectedCell.columnIndex;
-      backgroundColor = ({ row, column }: CellRenderer.CellConfig) => {
-        if (row === selectedRow && column === selectedColumn) {
-          return Colors.selectedBackgroundColor;
-        } else {
-          return Colors.unselectedBackgroundColor;
-        }
-      };
-      textColor = ({ row, column }: CellRenderer.CellConfig) => {
-        if (row === selectedRow && column === selectedColumn) {
-          return Colors.selectedTextColor;
-        } else {
-          return Colors.unselectedTextColor;
-        }
-      };
-    }
-    return new TextRenderer({ backgroundColor, textColor });
   }
 
   private readonly _grid: DataGrid;
-  private _selectionManager!: DataGridExtensions.SelectionManager;
-  private _clickEventHandler!: IDisposable;
-  private _contextMenuEventHandler!: IDisposable;
-  private _dblclickEventHandler!: IDisposable;
-  private readonly _options: Table.IOptions;
-  private readonly _dblclickSignal: Signal<this, DataGridExtensions.BodyCellIndex> = new Signal(this);
-  private _isDisposed = false;
+  private readonly _contextMenu: Menu;
 }
 
 export class TableDataModel extends DataModel {
@@ -259,4 +152,64 @@ export class TableDataModel extends DataModel {
     }
     return data;
   }
+
+}
+
+/**
+ * A namespace for private data.
+ */
+namespace Private {
+  /**
+   * The light theme for the data grid.
+   */
+  export const LIGHT_STYLE: DataGrid.Style = {
+    ...DataGrid.defaultStyle,
+    voidColor: '#F3F3F3',
+    backgroundColor: 'white',
+    headerBackgroundColor: '#EEEEEE',
+    gridLineColor: 'rgba(20, 20, 20, 0.15)',
+    headerGridLineColor: 'rgba(20, 20, 20, 0.25)',
+    rowBackgroundColor: i => (i % 2 === 0 ? '#F5F5F5' : 'white')
+  };
+
+  /**
+   * The dark theme for the data grid.
+   */
+  export const DARK_STYLE: DataGrid.Style = {
+    ...DataGrid.defaultStyle,
+    voidColor: 'black',
+    backgroundColor: '#111111',
+    headerBackgroundColor: '#424242',
+    gridLineColor: 'rgba(235, 235, 235, 0.15)',
+    headerGridLineColor: 'rgba(235, 235, 235, 0.25)',
+    rowBackgroundColor: i => (i % 2 === 0 ? '#212121' : '#111111')
+  };
+    
+  export type IRenderColors = {
+    textColor: string,
+    matchBackgroundColor: string,
+    currentMatchBackgroundColor: string,
+    horizontalAlignment: string
+  }
+
+  /**
+   * The light config for the data grid renderer.
+   */
+  export const LIGHT_TEXT_CONFIG: IRenderColors = {
+    textColor: '#111111',
+    matchBackgroundColor: '#FFFFE0',
+    currentMatchBackgroundColor: '#FFFF00',
+    horizontalAlignment: 'right'
+  };
+
+  /**
+   * The dark config for the data grid renderer.
+   */
+  export const DARK_TEXT_CONFIG: IRenderColors = {
+    textColor: '#F5F5F5',
+    matchBackgroundColor: '#838423',
+    currentMatchBackgroundColor: '#A3807A',
+    horizontalAlignment: 'right'
+  };
+
 }

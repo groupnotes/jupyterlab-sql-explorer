@@ -2,7 +2,9 @@ import {
     MainAreaWidget,
     ToolbarButton,
     setToolbar,
-    WidgetTracker
+    WidgetTracker,
+    InputDialog,
+    IThemeManager
 } from '@jupyterlab/apputils';
 
 import {
@@ -10,7 +12,8 @@ import {
   DocumentRegistry,
   DocumentWidget,
   IDocumentWidget,
-  TextModelFactory  
+  TextModelFactory,
+  Context
 } from '@jupyterlab/docregistry';
 
 import {
@@ -77,7 +80,6 @@ export class SqlConsoleWidget extends SplitPanel {
     dispose(): void {
         Signal.clearData(this)
         this.editor.dispose()
-        //this.toolbar.dispose()
         this.resultsTable.dispose()
         super.dispose()
     }
@@ -87,24 +89,48 @@ export class SqlConsoleWidget extends SplitPanel {
         this.editor.updateConn(dbid)
     }
     
+    set theme(theme:string) {
+        this.resultsTable.theme=theme
+    }
+    
     save=async ()=>{
+        
+        const {trans}=this._jp_services
+        
         if (this._context) {
-            this._context.save()
+            await this._context.save()
             return
         }
-        //
-//         const docManager = new DocumentManager({
-//             registry: app.docRegistry,
-//             manager, 
-//             opener
-//         });
-        const {docManager}=this._jp_services
-        const textModelFactory = new TextModelFactory();
-        console.log(textModelFactory)
-        const m=await docManager.newUntitled({type:'sql'})
-        //m.content = this.editor.value;
-        //m.save()
-        console.log(m)
+        
+        if (this._context2) {
+           this._context2.model.value.text=this.editor.value
+           await this._context2.save() 
+           return 
+        }
+        
+        const result=await InputDialog.getText({
+            title: trans.__('Please input sql file name'),
+            text: 'work/untitled.sql'
+        })
+        
+        if (result.button.accept) {
+            if (!result.value) return
+            const fp = result.value as string;
+            const {docManager}=this._jp_services
+            const textModelFactory = new TextModelFactory();
+            //const m=await docManager.newUntitled({type:'file', ext:'.sql'})
+            const context=new Context({
+                manager: docManager.services,
+                factory: textModelFactory,
+                path: fp
+            })
+            await context.initialize(true)
+            context.model.value.text=this.editor.value
+            await context.save()
+
+            this._context2=context                
+
+        }
     }
     
     stop=()=>{
@@ -126,11 +152,12 @@ export class SqlConsoleWidget extends SplitPanel {
     }
     
     readonly editor: IEditor;
-    private resultsTable : ResultsTable;
     readonly queryModel: IQueryModel;
+    private readonly resultsTable : ResultsTable;
     private _is_running:boolean = false;
-    private _jp_services:IJpServices;
+    private readonly _jp_services:IJpServices;
     private _context?: DocumentRegistry.CodeContext
+    private _context2?: DocumentRegistry.CodeContext
 }
 
 /**
@@ -164,6 +191,14 @@ export class SqlConsoleWidgetFactory extends ABCWidgetFactory<
   }
     
   private _jp_services:IJpServices;
+}
+
+export function get_theme(themeManager:IThemeManager|null):string {
+    const isLight =
+          themeManager && themeManager.theme
+          ? themeManager.isLight(themeManager.theme)
+          : true;
+    return isLight ? 'light':'dark'
 }
 
 export function setup_sql_console(jp_services:IJpServices, tracker:WidgetTracker<IDocumentWidget<SqlConsoleWidget>>) {
@@ -227,11 +262,13 @@ export function setup_sql_console(jp_services:IJpServices, tracker:WidgetTracker
     );
     
     sqlConsoleFactory.widgetCreated.connect((sender, widget) => {
+        const {themeManager} = jp_services
         // Notify the widget tracker if restore data needs to update.
         widget.context.pathChanged.connect(() => {
           void tracker.save(widget);
         });
         void tracker.add(widget);
+        widget.content.theme = get_theme(themeManager);  
     });
         
     app.docRegistry.addFileType(sqlFileType);
@@ -240,6 +277,7 @@ export function setup_sql_console(jp_services:IJpServices, tracker:WidgetTracker
 
 export function newSqlConsole(qmodel:QueryModel, init_sql:string, jp_services:IJpServices) {
     // find Widget by id
+    const {themeManager} = jp_services
     let id = 'jp-sql-explorer:query' + qmodel.dbid;
     let widget = toArray(jp_services.app.shell.widgets()).find(widget => widget.id === id);
     if (widget && !widget.isDisposed) {
@@ -249,6 +287,7 @@ export function newSqlConsole(qmodel:QueryModel, init_sql:string, jp_services:IJ
        const sql:string=`-- conn: ${qmodel.dbid}\n\n${init_sql}\n`; 
        const model = new CodeEditor.Model({value:sql}); 
        const content = new SqlConsoleWidget(qmodel, undefined, model, jp_services) 
+       content.theme=get_theme(themeManager)
        widget = new MainAreaWidget({ content});
        setToolbar(widget, toolbarFactory)
        widget.id = id
