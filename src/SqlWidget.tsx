@@ -1,4 +1,4 @@
-import { ReactWidget} from '@jupyterlab/apputils';
+import { ReactWidget } from '@jupyterlab/apputils';
 //import { StylesProvider } from '@material-ui/core/styles';
 import { Message } from '@lumino/messaging';
 import { Widget } from '@lumino/widgets';
@@ -23,13 +23,13 @@ export const sqlWidgetStyle = style({
  */
 export class SqlWidget extends ReactWidget {
   constructor(
-    model : SqlModel,
+    model: SqlModel,
     jp_services: IJpServices,
     options?: Widget.IOptions
   ) {
     super(options);
-    this._model=model
-    this._jp_services=jp_services
+    this._model = model;
+    this._jp_services = jp_services;
     this.node.id = 'SqlSession-root';
     this.addClass(sqlWidgetStyle);
   }
@@ -47,12 +47,12 @@ export class SqlWidget extends ReactWidget {
     //});
     super.onBeforeShow(msg);
   }
-    
+
   onAfterAttach(msg: Message): void {
     // Listen for resize messages
-    this.node.addEventListener('resize', ()=>console.log("RESIZE"));
-    console.log("onAfterAttach")
-    super.onAfterAttach(msg);  
+    this.node.addEventListener('resize', () => console.log('RESIZE'));
+    console.log('onAfterAttach');
+    super.onAfterAttach(msg);
   }
 
   /**
@@ -62,12 +62,9 @@ export class SqlWidget extends ReactWidget {
    * includes layout triggered rendering.
    */
   render(): JSX.Element {
-    return (
-        <SqlPanel model={this._model} jp_services={this._jp_services}/>
-    );
+    return <SqlPanel model={this._model} jp_services={this._jp_services} />;
   }
-    
-  private _model : SqlModel
-  private _jp_services : IJpServices
 
+  private _model: SqlModel;
+  private _jp_services: IJpServices;
 }

@@ -4,43 +4,43 @@
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
 
-.jp-Sql-Exp-toolbar-text {
+.jp-sql-exp-toolbar-text {
   font-weight: 700;
   align-items: center;
   line-height: 24px;
   margin-right: 19px;
 }
 
-.jp-Sql-Exp-toolbar-errmsg,
-.jp-Sql-Exp-toolbar-timer {
-    margin-right: 10px;
-    height: 100%;
-    line-height: 24px;
-    max-width: 300px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+.jp-sql-exp-toolbar-errmsg,
+.jp-sql-exp-toolbar-timer {
+  margin-right: 10px;
+  height: 100%;
+  line-height: 24px;
+  max-width: 300px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.jp-Sql-Exp-toolbar-icon {
-    margin: 0px 10px;
-    height: 100%;
+.jp-sql-exp-toolbar-icon {
+  margin: 0 10px;
+  height: 100%;
 }
 
-.jp-Sql-Exp-input {
-    display: flex;
-    margin: 5px 0px;
+.jp-sql-exp-input {
+  display: flex;
+  margin: 5px 0;
 }
 
-.jp-Sql-Exp-input>span:first-child {
-    width: 60px;
-    line-height: 30px;
-    text-align: right;
-    margin-right: 3px;
+.jp-sql-exp-input > span:first-child {
+  width: 60px;
+  line-height: 30px;
+  text-align: right;
+  margin-right: 3px;
 }
 
-.jp-Sql-Exp-input select {
-    width: 100%;
-    border: 1px solid #888;
-    border-radius: 0;
+.jp-sql-exp-input select {
+  width: 100%;
+  border: 1px solid #888;
+  border-radius: 0;
 }

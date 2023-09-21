@@ -18,7 +18,7 @@
     "strict": true,
     "strictNullChecks": true,
     "target": "ES2018",
-    "lib":["DOM", "ESnext"],
+    "lib": ["DOM", "ESnext"],
     "types": ["jest"]
   },
   "include": ["src/**/*"]

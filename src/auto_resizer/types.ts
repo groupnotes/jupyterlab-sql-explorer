@@ -1,4 +1,4 @@
-import { HTMLAttributes, ReactNode } from "react";
+import { HTMLAttributes, ReactNode } from 'react';
 
 export type HorizontalSize = {
   width: number;
@@ -13,7 +13,7 @@ export type Size = HorizontalSize & VerticalSize;
 type BaseProps = {
   nonce?: string;
   tagName?: string;
-} & Omit<HTMLAttributes<HTMLDivElement>, "children" | "onResize">;
+} & Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onResize'>;
 
 export type HeightOnlyProps = BaseProps & {
   children: (size: VerticalSize) => ReactNode;
@@ -41,17 +41,3 @@ export type HeightAndWidthProps = BaseProps & {
 };
 
 export type Props = HeightOnlyProps | WidthOnlyProps | HeightAndWidthProps;
-
-export function isHeightAndWidthProps(
-  props: any
-): props is HeightAndWidthProps {
-  return props && props.disableHeight !== true && props.disableWidth !== true;
-}
-
-export function isHeightOnlyProps(props: any): props is HeightOnlyProps {
-  return props && props.disableHeight !== true && props.disableWidth === true;
-}
-
-export function isWidthOnlyProps(props: any): props is WidthOnlyProps {
-  return props && props.disableHeight === true && props.disableWidth !== true;
-}

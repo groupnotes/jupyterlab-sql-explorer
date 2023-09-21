@@ -1,5 +1,5 @@
-import { AutoSizer } from "./AutoSizer";
+import { AutoSizer } from './AutoSizer';
 
 export default AutoSizer;
 
-export * from "./types";
+export * from './types';

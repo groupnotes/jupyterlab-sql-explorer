@@ -2,23 +2,23 @@ import { Widget } from '@lumino/widgets';
 
 import { IDisposable } from '@lumino/disposable';
 
-import { Table, TableDataModel} from './Table';
+import { Table, TableDataModel } from './Table';
 
 export class ResultsTable implements IDisposable {
   constructor(keys: Array<string>, data: Array<Array<any>>) {
     this._model = new TableDataModel(keys, data);
-    this._table = new Table(this._model)
+    this._table = new Table(this._model);
   }
 
   get widget(): Widget {
     return this._table.widget;
   }
-    
-  set theme(theme:string) {
-     this._table.theme=theme
+
+  set theme(theme: string) {
+    this._table.theme = theme;
   }
-    
-  setData(keys: Array<string>, data: Array<Array<any>>) {
+
+  setData(keys: Array<string>, data: Array<Array<any>>): void {
     this._model = new TableDataModel(keys, data);
     this._table.dataModel = this._model;
   }

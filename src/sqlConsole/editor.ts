@@ -12,18 +12,15 @@ export interface IEditor extends IDisposable {
 
   readonly value: string;
   readonly sql: string;
-  readonly appendText : (txt:string)=>void;
+  readonly appendText: (txt: string) => void;
   readonly execute: ISignal<this, string>;
   readonly valueChanged: ISignal<this, string>;
-  readonly updateConn: (conn:string)=>void;                            
+  readonly updateConn: (conn: string) => void;
 }
 
 export class Editor implements IEditor, IDisposable {
-  constructor(
-    model: CodeEditor.IModel,
-    editorFactory: IEditorFactoryService
-  ) {
-    this._model=model
+  constructor(model: CodeEditor.IModel, editorFactory: IEditorFactoryService) {
+    this._model = model;
     this._widget = new EditorWidget(model, editorFactory);
     this._model.value.changed.connect(() => {
       this._valueChanged.emit(this.value);
@@ -33,77 +30,84 @@ export class Editor implements IEditor, IDisposable {
       this._execute.emit(this.value);
     }, this);
   }
-  
+
   get isDisposed(): boolean {
-      return this._widget.isDisposed
+    return this._widget.isDisposed;
   }
-    
-  dispose() {
-      Signal.clearData(this)
-      this._widget.dispose()
+
+  dispose(): void {
+    Signal.clearData(this);
+    this._widget.dispose();
   }
-    
-  appendText(txt:string) {
-      const editor=this.widget.editor;
-      if (editor.replaceSelection) editor.replaceSelection(txt)
+
+  appendText(txt: string): void {
+    const editor = this.widget.editor;
+    if (editor.replaceSelection) {
+      editor.replaceSelection(txt);
+    }
   }
-  
-  updateConn(conn:string) {
-     const newline=`-- conn: ${conn}` 
-     const lines=this.value.split('\n')
-     const line0= lines[0]
-     const match = line0?.match(/^--\s*conn:\s*(.*?)\s*$/);
-     if (match) {
-         lines[0]=newline
-     }else{
-         lines.unshift(newline+'\n')
-     }
-     this.widget.model.value.text=lines.join('\n')
+
+  updateConn(conn: string): void {
+    const newline = `-- conn: ${conn}`;
+    const lines = this.value.split('\n');
+    const line0 = lines[0];
+    const match = line0?.match(/^--\s*conn:\s*(.*?)\s*$/);
+    if (match) {
+      lines[0] = newline;
+    } else {
+      lines.unshift(newline + '\n');
+    }
+    this.widget.model.value.text = lines.join('\n');
   }
-  
+
   get value(): string {
-     return this._model.value.text;
+    return this._model.value.text;
   }
-    
+
   get sql(): string {
-     // Get the current SQL statement separated by semicolons 
-     // or the selected text as sql 
-     const editor=this.widget.editor;
-     const selection = editor.getSelection();
-     const start: number = editor.getOffsetAt(selection.start);
-     const end: number = editor.getOffsetAt(selection.end);
-     let text=this._model.value.text;
-     if (start!=end) {
-         if (start>end) text = text.slice(end, start);
-         else text = text.slice(start, end);
-     }
-     return this.findSegment(text, start)
+    // Get the current SQL statement separated by semicolons
+    // or the selected text as sql
+    const editor = this.widget.editor;
+    const selection = editor.getSelection();
+    const start: number = editor.getOffsetAt(selection.start);
+    const end: number = editor.getOffsetAt(selection.end);
+    let text = this._model.value.text;
+    if (start !== end) {
+      if (start > end) {
+        text = text.slice(end, start);
+      } else {
+        text = text.slice(start, end);
+      }
+    }
+    return this.findSegment(text, start);
   }
 
-  private findSegment(text:string, pos:number): string {
-     // segment by ;, and return whitch around pos
-     const segments = text.split(';');
-     let segmentIndex = -1;
+  private findSegment(text: string, pos: number): string {
+    // segment by ;, and return whitch around pos
+    const segments = text.split(';');
+    let segmentIndex = -1;
 
-     for (let i = 0; i < segments.length; i++) {
-        if (pos <= segments[i].length) {
-          segmentIndex = i;
-          break;
-        }
+    for (let i = 0; i < segments.length; i++) {
+      if (pos <= segments[i].length) {
+        segmentIndex = i;
+        break;
+      }
 
-        pos -= segments[i].length + 1; 
-     }
+      pos -= segments[i].length + 1;
+    }
 
-     if (segmentIndex === -1) {
-        segmentIndex = segments.length - 1;
-     }
-      
-     if (segments[segmentIndex].trim() === "" && 
-         segmentIndex==segments.length-1 && 
-         segmentIndex>0) {
-         segmentIndex--
-     }
-     return segments[segmentIndex];
+    if (segmentIndex === -1) {
+      segmentIndex = segments.length - 1;
+    }
+
+    if (
+      segments[segmentIndex].trim() === '' &&
+      segmentIndex === segments.length - 1 &&
+      segmentIndex > 0
+    ) {
+      segmentIndex--;
+    }
+    return segments[segmentIndex];
   }
 
   get widget(): EditorWidget {
@@ -133,24 +137,24 @@ export class EditorWidget extends CodeEditorWrapper {
     this.editor.addKeydownHandler(this._onKeydown);
     this.addClass('jp-sql-explorer-ed');
   }
-    
-  dispose=()=>{
-     this.editor.addKeydownHandler(this._onKeydown);
-     //this.editor.removeKeydownHandler(this._onKeydown)
-     super.dispose() 
-  }
+
+  dispose = (): void => {
+    this.editor.addKeydownHandler(this._onKeydown);
+    //this.editor.removeKeydownHandler(this._onKeydown)
+    super.dispose();
+  };
 
   get executeCurrent(): ISignal<this, void> {
     return this._executeCurrent;
   }
 
-  _onKeydown=(_:CodeEditor.IEditor, event: KeyboardEvent): boolean=>{
+  _onKeydown = (_: CodeEditor.IEditor, event: KeyboardEvent): boolean => {
     if ((event.shiftKey || event.ctrlKey) && event.key === 'Enter') {
       this.run();
       return true;
     }
     return false;
-  }
+  };
 
   run(): void {
     this._executeCurrent.emit(void 0);

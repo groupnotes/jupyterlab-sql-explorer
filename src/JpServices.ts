@@ -5,9 +5,9 @@ import { IDocumentManager } from '@jupyterlab/docmanager';
 import { IThemeManager } from '@jupyterlab/apputils';
 
 export interface IJpServices {
-    app: JupyterFrontEnd,
-    editorService: IEditorServices, 
-    trans: TranslationBundle,
-    docManager: IDocumentManager,
-    themeManager:IThemeManager | null
+  app: JupyterFrontEnd;
+  editorService: IEditorServices;
+  trans: TranslationBundle;
+  docManager: IDocumentManager;
+  themeManager: IThemeManager | null;
 }

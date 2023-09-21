@@ -1,6 +1,6 @@
-import { Component, createElement, CSSProperties, ReactElement } from "react";
+import { Component, createElement, CSSProperties, ReactElement } from 'react';
 
-import { HeightAndWidthProps, Props, Size } from "./types";
+import { HeightAndWidthProps, Props, Size } from './types';
 
 type State = {
   height: number;
@@ -14,7 +14,7 @@ export class AutoSizer extends Component<Props, State> {
     height: (this.props as HeightAndWidthProps).defaultHeight || 0,
     scaledHeight: (this.props as HeightAndWidthProps).defaultHeight || 0,
     scaledWidth: (this.props as HeightAndWidthProps).defaultWidth || 0,
-    width: (this.props as HeightAndWidthProps).defaultWidth || 0,
+    width: (this.props as HeightAndWidthProps).defaultWidth || 0
   };
 
   _autoSizer: HTMLElement | null = null;
@@ -23,7 +23,7 @@ export class AutoSizer extends Component<Props, State> {
   _resizeObserver: ResizeObserver | null = null;
   _timeoutId: number | null = null;
 
-  componentDidMount() {
+  componentDidMount(): void {
     //const { nonce } = this.props;
 
     if (
@@ -42,8 +42,8 @@ export class AutoSizer extends Component<Props, State> {
 
       // Defer requiring resize handler in order to support server-side rendering.
       // See issue #41
-      if (this._parentNode != null) {
-        if (typeof ResizeObserver !== "undefined") {
+      if (this._parentNode !== null) {
+        if (typeof ResizeObserver !== 'undefined') {
           this._resizeObserver = new ResizeObserver(() => {
             // Guard against "ResizeObserver loop limit exceeded" error;
             // could be triggered if the state update causes the ResizeObserver handler to run long.
@@ -57,7 +57,7 @@ export class AutoSizer extends Component<Props, State> {
     }
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     if (this._parentNode) {
       // if (this._detectElementResize) {
       //   this._detectElementResize.removeResizeListener(
@@ -80,14 +80,14 @@ export class AutoSizer extends Component<Props, State> {
   render(): ReactElement {
     const {
       children,
-      defaultHeight,
-      defaultWidth,
+      //defaultHeight,
+      //defaultWidth,
       disableHeight = false,
       disableWidth = false,
-      nonce,
-      onResize,
+      //nonce,
+      //onResize,
       style = {},
-      tagName = "div",
+      tagName = 'div',
       ...rest
     } = this.props as HeightAndWidthProps;
 
@@ -96,7 +96,7 @@ export class AutoSizer extends Component<Props, State> {
     // Outer div should not force width/height since that may prevent containers from shrinking.
     // Inner component should overflow and use calculated width/height.
     // See issue #68 for more information.
-    const outerStyle: CSSProperties = { overflow: "visible" };
+    const outerStyle: CSSProperties = { overflow: 'visible' };
     const childParams: Partial<Size> = {};
 
     // Avoid rendering children before the initial measurements have been collected.
@@ -127,15 +127,15 @@ export class AutoSizer extends Component<Props, State> {
         ref: this._setRef,
         style: {
           ...outerStyle,
-          ...style,
+          ...style
         },
-        ...rest,
+        ...rest
       },
       !bailoutOnChildren && children(childParams as Size)
     );
   }
 
-  _onResize = () => {
+  _onResize = (): void => {
     this._timeoutId = null;
 
     const { disableHeight, disableWidth, onResize } = this
@@ -147,10 +147,10 @@ export class AutoSizer extends Component<Props, State> {
       // See issue #150 for more context.
 
       const style = window.getComputedStyle(this._parentNode) || {};
-      const paddingLeft = parseFloat(style.paddingLeft ?? "0");
-      const paddingRight = parseFloat(style.paddingRight ?? "0");
-      const paddingTop = parseFloat(style.paddingTop ?? "0");
-      const paddingBottom = parseFloat(style.paddingBottom ?? "0");
+      const paddingLeft = parseFloat(style.paddingLeft ?? '0');
+      const paddingRight = parseFloat(style.paddingRight ?? '0');
+      const paddingTop = parseFloat(style.paddingTop ?? '0');
+      const paddingBottom = parseFloat(style.paddingBottom ?? '0');
 
       const rect = this._parentNode.getBoundingClientRect();
       const scaledHeight = rect.height - paddingTop - paddingBottom;
@@ -171,17 +171,17 @@ export class AutoSizer extends Component<Props, State> {
           height,
           width,
           scaledHeight,
-          scaledWidth,
+          scaledWidth
         });
 
-        if (typeof onResize === "function") {
+        if (typeof onResize === 'function') {
           onResize({ height, scaledHeight, scaledWidth, width });
         }
       }
     }
   };
 
-  _setRef = (autoSizer: HTMLElement | null) => {
+  _setRef = (autoSizer: HTMLElement | null): void => {
     this._autoSizer = autoSizer;
   };
 }
