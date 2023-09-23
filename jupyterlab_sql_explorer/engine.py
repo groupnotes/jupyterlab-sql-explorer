@@ -3,10 +3,10 @@ import json
 import base64
 import sqlalchemy
 import gettext
-from  urllib.parse import quote_plus
+from urllib.parse import quote_plus
 _ = gettext.gettext
 
-DB_CFG='/home/jovyan/.ssh/db_conf.json'
+DB_CFG='~/.ssh/db1_conf.json'
 
 DB_MYSQL = '1'
 DB_PGSQL = '2'
@@ -16,6 +16,12 @@ DB_HIVE_KERBEROS = '5'
 DB_SQLITE = '6'
 
 _temp_pass_store = dict()
+
+def open_dbfile(dbfile):
+    expanded_file_path = os.path.expanduser(dbfile)
+    dir_name = os.path.dirname(expanded_file_path)
+    os.makedirs(dir_name, exist_ok=True)
+    return open(expanded_file_path, 'wt')
 
 def _getDBlist()->list:
     dbs=[]
@@ -38,6 +44,7 @@ def getDBlist()->list:
     return lst
 
 def _getCfgEntryList(passfile=DB_CFG)->list:
+    passfile= os.path.expanduser(passfile)
     if os.path.exists(passfile):
         with open(passfile, mode='rt') as f:
             try:
@@ -174,23 +181,17 @@ def addEntry(dbinfo, dbfile=DB_CFG):
 
     dbcfg[dbid]=dbinfo
     cfg=json.dumps(dbcfg, indent=4)
-    with open(dbfile, mode='wt') as f:
+    with open_dbfile(dbfile) as f:
         f.write(cfg)
 
     return dbinfo
 
 def delEntry(dbid, dbfile=DB_CFG):
-
-    if os.path.exists(dbfile):
-        with open(dbfile, mode='rt') as f:
-            dbcfg=json.load(f)
-    else:
-        dbcfg={}
-
+    dbcfg=_getCfgEntryList(dbfile)
     if dbid in dbcfg:
         del dbcfg[dbid]
         cfg=json.dumps(dbcfg, indent=4)
-        with open(dbfile, mode='wt') as f:
+        with open_dbfile(dbfile) as f:
             f.write(cfg)
 
 def check_pass(dbid: str)->(bool, str):
