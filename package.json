@@ -7,9 +7,9 @@
     "jupyterlab",
     "jupyterlab-extension"
   ],
-  "homepage": "",
+  "homepage": "https://github.com/groupnotes/jupyterlab-sql-explorer",
   "bugs": {
-    "url": "/issues"
+    "url": "https://github.com/groupnotes/jupyterlab-sql-explorer/issues"
   },
   "license": "BSD-3-Clause",
   "author": {
