@@ -3,6 +3,7 @@ import json
 import base64
 import sqlalchemy
 import gettext
+from  urllib.parse import quote_plus
 _ = gettext.gettext
 
 DB_CFG='/home/jovyan/.ssh/db_conf.json'
@@ -103,6 +104,8 @@ def _getSQL_engine(dbid, db, usedb=None):
         else:
             db_user = db['db_user']
             db_pass = db['db_pass']
+
+    db_pass = quote_plus(db_pass)
 
     if db['db_type'] == DB_MYSQL:   # MYSQL
         db_port = db['db_port'] if 'db_port' in db else 3306

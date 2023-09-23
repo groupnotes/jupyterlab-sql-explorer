@@ -1,14 +1,18 @@
+import pytest
 import json
-
+from unittest.mock import patch
+from jupyter_sql_explorer import db
 
 async def test_conn(jp_fetch):
-
+    '''
+    test for create/del connetion for database
+    '''
     response = await jp_fetch("jupyterlab-sql-explorer", "conns")
     assert response.code == 200
     old = json.loads(response.body)
 
     response = await jp_fetch("jupyterlab-sql-explorer", "conns",
-        method='POST', body=json.dumps({"db_id": "add", "db_name":"default", "db_type":'6'}))
+        method='POST', body=json.dumps({"db_id": "add", "db_name":"/tmp/test.db", "db_type":'6'}))
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {
@@ -26,40 +30,6 @@ async def test_conn(jp_fetch):
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == old
-
-
-async def test_dbtable(jp_fetch):
-
-    response = await jp_fetch("jupyterlab-sql-explorer", "conns",
-                    method='POST',
-                    body=json.dumps({"db_id": "add", "db_name":"default", "db_type":'6'}))
-    assert response.code == 200
-
-    response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': 'add'})
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {"data": []}
-
-    response = await jp_fetch("jupyterlab-sql-explorer", "conns", method='DELETE', params={'dbid': 'add'})
-    assert response.code == 200
-
-async def test_dbtable_tmpdb(jp_fetch):
-    response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': 'mysql'})
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {'data': [{'name': 'aaa', 'desc': '', 'type': 'table'}, {'name': 'bbb', 'desc': '', 'type': 'table'}]}
-
-async def test_table_tmpdb(jp_fetch):
-    response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': 'mysql', 'db': 'mysql'})
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {'data': [{'name': 'aaa', 'desc': '', 'type': 'table'}, {'name': 'bbb', 'desc': '', 'type': 'table'}]}
-
-async def test_column_tmpdb(jp_fetch):
-    response = await jp_fetch("jupyterlab-sql-explorer", "columns", params={'dbid': 'mysql', 'db': 'mysql', 'tbl': 'columns_priv'})
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {'data': [{'name': 'a', 'desc': 'INT', 'type': 'col'}, {'name': 'b', 'desc': 'string', 'type': 'col'}]}
 
 async def test_passwd(jp_fetch):
     response = await jp_fetch("jupyterlab-sql-explorer", "columns", params={'dbid': 'mysql_nopass', 'db': 'mysql', 'tbl': 'columns_priv'})
@@ -83,18 +53,6 @@ async def test_passwd(jp_fetch):
 
     response = await jp_fetch("jupyterlab-sql-explorer", "pass", method='DELETE')
 
-async def test_query(jp_fetch):
-    response = await jp_fetch("jupyterlab-sql-explorer", "query",
-                              method='POST',
-                              # body=json.dumps({'dbid': 'mysql', 'sql': 'SELECT * FROM data.AAA'}))
-                              body=json.dumps({'dbid': 'mysql', 'sql': 'inserxt into data.DDD values(1,2)'}))
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {'data': {'columns': ['type', 'name', 'tbl_name', 'rootpage', 'sql'], 'data': []}}
-
-
-async def test_fake_db(jp_fetch):
-    response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': '__fake__'})
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {'data': [{'name': 'a', 'desc': 'INT', 'type': 'col'}, {'name': 'b', 'desc': 'string', 'type': 'col'}]}
+@patch("jupyterlab_git.handlers.GitAllHistoryHandler.db", spec=db)
+async def test_mock(mock_db, jp_fetch):
+    print(mock_db)

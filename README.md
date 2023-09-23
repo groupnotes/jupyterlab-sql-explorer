@@ -1,6 +1,6 @@
 # jupyterlab-sql-explorer
 
-[![Github Actions Status](/workflows/Build/badge.svg)](/actions/workflows/build.yml)
+[![Github Actions Status](https://github.com/groupnotes/jupyterlab-sql-explorer/workflows/Build/badge.svg)](https://github.com/groupnotes/jupyterlab-sql-explorer/actions/workflows/build.yml)
 a sql tools for jupyterlab
 
 This extension is composed of a Python package named `jupyterlab-sql-explorer`

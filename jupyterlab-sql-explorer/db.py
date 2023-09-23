@@ -80,13 +80,14 @@ def get_column_info(dbid, db, tbl):
                 columns.append({'name': r[0], 'desc': r[1], 'type': 'col'})
         elif dbinfo['db_type'] ==engine.DB_PGSQL:
             for r in query(dbid, '''
-                SELECT column_name, column_comment
-                FROM pg_catalog.pg_description
-                JOIN information_schema.columns ON (pg_description.objoid = (table_schema || '.' || table_name)::regclass AND pg_description.objsubid = ordinal_position)
-                WHERE table_name = '%s' AND table_schema = '%s'
-            ''' %(tbl, db)):
-                print(r)
-                columns.append({'name': r[0], 'desc': '', 'type': 'col'})
+                SELECT column_name, data_type, col_description(
+                    (select '%s.%s'::regclass::oid), ordinal_position) as comment
+                FROM information_schema.columns c
+                JOIN pg_class ON c.table_name::regclass = pg_class.oid
+                WHERE  table_schema='%s' and table_name='%s'
+                ORDER BY ordinal_position
+            ''' %(db, tbl, db, tbl)):
+                columns.append({'name': r[0], 'desc': r[2], 'type': 'col'})
         elif dbinfo['db_type'] ==engine.DB_ORACLE:
             for r in query(dbid, f"SELECT column_name, comments FROM all_col_comments WHERE table_name = '${tbl}'"):
                 print(r)
@@ -122,6 +123,21 @@ def get_db_or_table(dbid, database):
         for r in query(dbid, "SELECT name FROM sqlite_master WHERE type='table'"):
             tables.append({'name': r[0], 'desc': '', 'type': 'table'})
         return tables
+    elif dbinfo['db_type'] ==engine.DB_PGSQL:
+        if database is None:
+            databases=[]
+            for r in query(dbid, "select schema_name from information_schema.schemata where schema_name='public' or schema_owner!='gpadmin'"):
+                databases.append({'name': r[0], 'desc': '', 'type': 'db'})
+            return databases
+        else:
+            tables=[]
+            for r in query(dbid, '''
+            SELECT t.tablename as table_name, obj_description((t.schemaname || '.' || t.tablename)::regclass, 'pg_class') as comment
+            FROM pg_catalog.pg_tables t
+            WHERE t.schemaname='%s';
+            ''' % database):
+                tables.append({'name': r[0], 'desc': r[1], 'type': 'table'})
+            return tables
     else:
         if database is None:
             databases=[]
