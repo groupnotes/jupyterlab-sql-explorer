@@ -1,7 +1,7 @@
 import pytest
 import json
 from unittest.mock import patch
-from jupyter_sql_explorer import db
+from .. import engine
 
 async def test_conn(jp_fetch):
     '''
@@ -31,28 +31,21 @@ async def test_conn(jp_fetch):
     payload = json.loads(response.body)
     assert payload == old
 
-async def test_passwd(jp_fetch):
-    response = await jp_fetch("jupyterlab-sql-explorer", "columns", params={'dbid': 'mysql_nopass', 'db': 'mysql', 'tbl': 'columns_priv'})
+@patch("jupyterlab_sql_explorer.handlers.engine._getDbInfo")
+async def test_passwd(mock_engine, jp_fetch):
+    mock_engine.return_value={'db_id': 'needpass', 'db_user': 'testuser'}
+    response = await jp_fetch("jupyterlab-sql-explorer", "columns", params={'dbid': 'needpass', 'db': 'mysql', 'tbl': 'columns_priv'})
     assert response.code == 200
     payload = json.loads(response.body)
-    assert payload == {'error': 'NEED-PASS', 'pass_info': {'db_id': 'mysql_nopass', 'db_user': ''}}
+    assert payload == {'error': "can't get table columns of columns_priv, reason: conn not exists or error"}
 
-    response = await jp_fetch("jupyterlab-sql-explorer", "pass",
-                              method='POST',
-                              body=json.dumps({'db_id': 'mysql_nopass', 'db_user': 'root', 'db_pass': '123456'}))
+    mock_engine.return_value={'db_id': 'needpass', 'db_type': engine.DB_MYSQL, 'db_user': 'testuser'}
+    response = await jp_fetch("jupyterlab-sql-explorer", "columns", params={'dbid': 'needpass', 'db': 'mysql', 'tbl': 'columns_priv'})
     assert response.code == 200
     payload = json.loads(response.body)
-    assert payload == {'error': 'user or passwd error'}
-
-    response = await jp_fetch("jupyterlab-sql-explorer", "pass",
-                              method='POST',
-                              body=json.dumps({'db_id': 'mysql_nopass', 'db_user': 'root', 'db_pass': '12345'}))
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {'data': 'set passwd ok'}
+    assert payload == {'error': 'NEED-PASS', 'pass_info': {'db_id': 'needpass', 'db_user': 'testuser'}}
 
     response = await jp_fetch("jupyterlab-sql-explorer", "pass", method='DELETE')
-
-@patch("jupyterlab_git.handlers.GitAllHistoryHandler.db", spec=db)
-async def test_mock(mock_db, jp_fetch):
-    print(mock_db)
+    assert response.code == 200
+    payload = json.loads(response.body)
+    assert payload == {'data': 'delete pass ok'}

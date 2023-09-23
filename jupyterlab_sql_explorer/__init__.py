@@ -1,6 +1,6 @@
 from ._version import __version__
 from .handlers import setup_handlers
-
+from . import db
 
 def _jupyter_labextension_paths():
     return [{
@@ -11,7 +11,7 @@ def _jupyter_labextension_paths():
 
 def _jupyter_server_extension_points():
     return [{
-        "module": "jupyterlab-sql-explorer"
+        "module": "jupyterlab_sql_explorer"
     }]
 
 
@@ -24,7 +24,7 @@ def _load_jupyter_server_extension(server_app):
         JupyterLab application instance
     """
     setup_handlers(server_app.web_app)
-    name = "jupyterlab-sql-explorer"
+    name = "jupyterlab_sql_explorer"
     server_app.log.info(f"Registered {name} server extension")
 
 

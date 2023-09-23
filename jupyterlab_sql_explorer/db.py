@@ -1,6 +1,5 @@
 from . import engine
 from .serializer import make_row_serializable
-import time
 
 log=None
 def set_log(_log):
@@ -114,7 +113,7 @@ def get_db_or_table(dbid, database):
     Obtain the database or table (if there is no database layer) of a specified database 
     connection
     '''
-    dbinfo = engine.getDbInfo(dbid)
+    dbinfo = engine._getDbInfo(dbid)
     if dbinfo is None:
         return None
 
@@ -138,6 +137,22 @@ def get_db_or_table(dbid, database):
             ''' % database):
                 tables.append({'name': r[0], 'desc': r[1], 'type': 'table'})
             return tables
+
+    elif dbinfo['db_type'] ==engine.DB_MYSQL:
+        if database is None:
+            databases=[]
+            for r in query(dbid, "show databases"):
+                databases.append({'name': r[0], 'desc': '', 'type': 'db'})
+            return databases
+        else:
+            tables=[]
+            for r in query(dbid, '''
+                SELECT table_name, table_comment FROM information_schema.tables
+                WHERE table_schema = '%s'
+            ''' % database):
+                tables.append({'name': r[0], 'desc': r[1], 'type': 'table'})
+            return tables
+
     else:
         if database is None:
             databases=[]

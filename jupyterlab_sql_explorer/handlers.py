@@ -1,4 +1,5 @@
 import json
+import traceback
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
@@ -49,6 +50,7 @@ class DbTableHandler(APIHandler):
                 self.finish(json.dumps({'data': data}))
         except Exception as err:
             self.log.error(err)
+            traceback.print_exc()
             self.finish(json.dumps({'error': "can't get db/table list of "+dbid}))
 
 class TabColumnHandler(APIHandler):
@@ -69,7 +71,8 @@ class TabColumnHandler(APIHandler):
                 self.finish(json.dumps({'data': data}))
         except Exception as err:
             self.log.error(err)
-            self.finish(json.dumps({'error': "can't get table columns of " + tbl}))
+            traceback.print_exc()
+            self.finish(json.dumps({'error': f"can't get table columns of {tbl}, reason: {str(err)}"}))
 
 class PasswdHandler(APIHandler):
     '''
@@ -94,7 +97,7 @@ class PasswdHandler(APIHandler):
     def delete(self):
         dbid=self.get_argument('dbid', None)
         engine.clear_pass(dbid)
-        self.finish(json.dumps({'data': 'set pass ok'}))
+        self.finish(json.dumps({'data': 'delete pass ok'}))
 
 class QueryHandler(APIHandler):
     '''

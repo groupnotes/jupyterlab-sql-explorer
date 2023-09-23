@@ -104,8 +104,7 @@ def _getSQL_engine(dbid, db, usedb=None):
         else:
             db_user = db['db_user']
             db_pass = db['db_pass']
-
-    db_pass = quote_plus(db_pass)
+        db_pass = quote_plus(db_pass)
 
     if db['db_type'] == DB_MYSQL:   # MYSQL
         db_port = db['db_port'] if 'db_port' in db else 3306
@@ -150,6 +149,7 @@ def __gen_krb5_conf(db):
 def getEngine(dbid, usedb=None):
 
     dbinfo = _getDbInfo(dbid)
+
     if dbinfo is None:
         if os.environ.get('BATCH'):
             print("Can't Access DB: %s" % dbid)
@@ -198,8 +198,8 @@ def check_pass(dbid: str)->(bool, str):
     check passwd is set for dbid
     '''
     dbinfo = _getDbInfo(dbid)
-    if dbinfo is None:
-        return (False, None)
+    if dbinfo is None or 'db_type' not in dbinfo:
+        raise Exception('conn not exists or error')
 
     if dbinfo['db_type']==DB_HIVE_KERBEROS or dbinfo['db_type']==DB_SQLITE:
         return (True, None)
