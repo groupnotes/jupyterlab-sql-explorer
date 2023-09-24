@@ -21,7 +21,8 @@ import { sqlIcon } from './icons';
 import { getSqlModel } from './model';
 import { IJpServices } from './JpServices';
 import { askPasswd } from './components/ask_pass';
-import { IPass } from './interfaces';
+import { createNewConn } from './components/new_conn';
+import { IPass, IDBConn } from './interfaces';
 
 import { addCommands, createMenu } from './cmd_menu';
 import {
@@ -90,6 +91,10 @@ function activate(
   const model = getSqlModel();
   model.need_passwd.connect((_, pass_info: IPass) => {
     askPasswd(pass_info, model, trans);
+  });
+
+  model.create_conn.connect((_, data: IDBConn) => {
+    createNewConn(data, model, trans);
   });
 
   addCommands(app, model, trans);

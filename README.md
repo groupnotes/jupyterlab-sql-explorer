@@ -1,15 +1,16 @@
 # jupyterlab-sql-explorer
 
 [![Github Actions Status](https://github.com/groupnotes/jupyterlab-sql-explorer/workflows/Build/badge.svg)](https://github.com/groupnotes/jupyterlab-sql-explorer/actions/workflows/build.yml)
-a sql tools for jupyterlab
+A sql plugin for jupyterlab.
 
-This extension is composed of a Python package named `jupyterlab-sql-explorer`
+This extension is composed of a Python package named `jupyterlab_sql_explorer`
 for the server extension and a NPM package named `jupyterlab-sql-explorer`
 for the frontend extension.
 
 ## Requirements
 
 - JupyterLab >= 3.0
+- sqlalchemy >1.4 <2.0
 
 ## Install
 

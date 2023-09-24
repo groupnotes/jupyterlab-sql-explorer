@@ -25,6 +25,7 @@ export interface IDBConn {
   db_user?: string;
   db_pass?: string;
   name?: string;
+  errmsg?: string;
 }
 
 export interface IPass {

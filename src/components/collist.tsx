@@ -61,13 +61,15 @@ export class ColList extends React.Component<TColProps, TColState> {
     const commands = new CommandRegistry();
     const copy = 'copyName';
     const copy_all = 'copyAll';
+    const { trans } = this.props.jp_services;
+
     commands.addCommand(copy, {
-      label: 'Copy Column Name',
+      label: trans.__('Copy Column Name'),
       iconClass: 'jp-MaterialIcon jp-CopyIcon',
       execute: this._copyToClipboard('n')
     });
     commands.addCommand(copy_all, {
-      label: 'Copy Column & Comment',
+      label: trans.__('Copy Column Name & Comment'),
       iconClass: 'jp-MaterialIcon jp-CopyIcon',
       execute: this._copyToClipboard('all')
     });
@@ -152,8 +154,9 @@ export class ColList extends React.Component<TColProps, TColState> {
 
   private _copyToClipboard = (t: string) => () => {
     const { name, desc } = this._sel_item;
-    if (t === 'all' && desc !== '') {
-      Clipboard.copyToSystem(`${name} /* ${desc} */`);
+    const comment = desc?.trim();
+    if (t === 'all' && comment !== '') {
+      Clipboard.copyToSystem(`${name} /* ${comment} */`);
     } else {
       Clipboard.copyToSystem(name);
     }
@@ -201,9 +204,12 @@ export class ColList extends React.Component<TColProps, TColState> {
     } else {
       const cols = new Array<string>();
       checked.forEach(c => {
-          const comment=col_names[c].trim()
-          if (comment) cols.push(`    t.${c} /* ${comment} */`);
-          else cols.push(`    t.${c}`)
+        const comment = col_names[c].trim();
+        if (comment) {
+          cols.push(`    t.${c} /* ${comment} */`);
+        } else {
+          cols.push(`    t.${c}`);
+        }
       });
       sql += '\n' + cols.join(',\n');
     }

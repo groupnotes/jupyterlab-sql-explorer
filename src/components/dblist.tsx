@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Menu } from '@lumino/widgets';
+import { Clipboard } from '@jupyterlab/apputils';
 import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { CommandRegistry } from '@lumino/commands';
 import { TranslationBundle } from '@jupyterlab/translation';
@@ -101,7 +102,7 @@ export class ConnList extends React.Component<
       this.props;
     const { trans } = jp_services as IJpServices;
     const { sel_name } = this.state;
-    console.log(list)
+    console.log(list);
     return (
       <>
         <div className={tbStyle}>
@@ -175,7 +176,7 @@ export class ConnList extends React.Component<
     showDialog({
       title: trans.__('Are You Sure?'),
       body: trans.__('Delete Database Connection：') + name,
-      buttons: [Dialog.okButton(), Dialog.cancelButton()]
+      buttons: [Dialog.cancelButton(), Dialog.okButton()]
     }).then(result => {
       if (result.button.accept) {
         getSqlModel().del_conn(name);
@@ -284,78 +285,134 @@ export const DBList: React.FC<ListProps> = ({
   );
 };
 
-export const TbList: React.FC<ListProps> = ({
-  trans,
-  onSelect,
-  list,
-  onRefresh,
-  filter,
-  wait
-}): React.ReactElement => {
-  const l = list.filter(
-    p =>
-      p.name.toLowerCase().includes(filter) ||
-      (p.desc && p.desc.toLowerCase().includes(filter))
-  );
-  const Row = ({
-    index,
-    style,
-    data
-  }: {
-    index: number;
-    style: React.CSSProperties;
-    data: any;
-  }) => {
-    const p = data[index];
-    return (
-      <div
-        key={index}
-        style={style}
-        onClick={onSelect(p)}
-        title={p.name + '\n' + p.desc}
-        className={divListStyle}
-      >
-        <tabIcon.react
-          tag="span"
-          width="14px"
-          height="14px"
-          right="5px"
-          verticalAlign="text-top"
-        />
-        <span className="name">{p.name}</span>
-        <span className="memo">{p.desc}</span>
-      </div>
+export class TbList extends React.Component<ListProps, { sel_name?: string }> {
+  constructor(props: ListProps) {
+    super(props);
+    this._contextMenu = this._createContextMenu();
+    this.state = {
+      sel_name: ''
+    };
+  }
+
+  private _createContextMenu(): Menu {
+    const { trans } = this.props;
+    const commands = new CommandRegistry();
+    const copy = 'copyName';
+    const copy_all = 'copyAll';
+    commands.addCommand(copy, {
+      label: trans.__('Copy Table Name'),
+      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      execute: this._copyToClipboard('n')
+    });
+    commands.addCommand(copy_all, {
+      label: trans.__('Copy Table Name & Comment'),
+      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      execute: this._copyToClipboard('all')
+    });
+    const menu = new Menu({ commands });
+    menu.addItem({ command: copy });
+    menu.addItem({ command: copy_all });
+    return menu;
+  }
+
+  render(): React.ReactElement {
+    const { trans, onSelect, list, onRefresh, filter, wait } = this.props;
+
+    const { sel_name } = this.state;
+
+    const l = list.filter(
+      p =>
+        p.name.toLowerCase().includes(filter) ||
+        (p.desc && p.desc.toLowerCase().includes(filter))
     );
-  };
-  return (
-    <>
-      <div className={tbStyle}>
-        <div style={{ textAlign: 'right' }}>
-          <ActionBtn
-            msg={trans.__('refresh')}
-            icon={refreshIcon}
-            onClick={onRefresh}
+
+    const Row = ({
+      index,
+      style,
+      data
+    }: {
+      index: number;
+      style: React.CSSProperties;
+      data: any;
+    }) => {
+      const p = data[index];
+      return (
+        <div
+          key={index}
+          style={style}
+          onClick={onSelect(p)}
+          title={p.name + '\n' + p.desc}
+          className={
+            divListStyle + ' ' + (sel_name === p.name ? activeStyle : '')
+          }
+          onContextMenu={event => this._handleContextMenu(event, p)}
+        >
+          <tabIcon.react
+            tag="span"
+            width="14px"
+            height="14px"
+            right="5px"
+            verticalAlign="text-top"
           />
+          <span className="name">{p.name}</span>
+          <span className="memo">{p.desc}</span>
         </div>
-        <hr className={hrStyle} />
-      </div>
-      {wait ? (
-        <Loading />
-      ) : (
-        <AutoSizer>
-          {({ height, width }: { height: any; width: any }) => (
-            <List
-              itemCount={l.length}
-              itemData={l}
-              itemSize={25}
-              height={height - 120}
-              width={width}
-            >
-              {Row}
-            </List>
-          )}
-        </AutoSizer>
-      )}
-    </>
-  );
-};
+      );
+    };
+
+    return (
+      <>
+        <div className={tbStyle}>
+          <div style={{ textAlign: 'right' }}>
+            <ActionBtn
+              msg={trans.__('refresh')}
+              icon={refreshIcon}
+              onClick={onRefresh}
+            />
+          </div>
+          <hr className={hrStyle} />
+        </div>
+        {wait ? (
+          <Loading />
+        ) : (
+          <AutoSizer>
+            {({ height, width }: { height: any; width: any }) => (
+              <List
+                itemCount={l.length}
+                itemData={l}
+                itemSize={25}
+                height={height - 120}
+                width={width}
+              >
+                {Row}
+              </List>
+            )}
+          </AutoSizer>
+        )}
+      </>
+    );
+  }
+
+  private _handleContextMenu = (
+    event: React.MouseEvent<any>,
+    item: IDbItem
+  ) => {
+    event.preventDefault();
+    this._sel_item = item;
+    this.setState({ sel_name: item.name });
+    this._contextMenu.open(event.clientX, event.clientY);
+  };
+
+  private _copyToClipboard = (t: string) => () => {
+    const { name, desc } = this._sel_item;
+    const comment = desc?.trim();
+    if (t === 'all' && comment !== '') {
+      Clipboard.copyToSystem(`${name} /* ${comment} */`);
+    } else {
+      Clipboard.copyToSystem(name);
+    }
+  };
+
+  private readonly _contextMenu: Menu;
+  private _sel_item!: IDbItem;
+}

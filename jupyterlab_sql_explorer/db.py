@@ -64,7 +64,8 @@ def query_header(dbid, sql, **kwargs) ->dict:
 def get_column_info(dbid, db, tbl):
     '''
     '''
-    dbinfo = engine.getDbInfo(dbid)
+    print(dbid, db, tbl)
+    dbinfo = engine._getDbInfo(dbid)
     if dbinfo is None:
         return
 

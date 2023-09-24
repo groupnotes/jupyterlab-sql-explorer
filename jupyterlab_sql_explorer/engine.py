@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import base64
 import sqlalchemy
@@ -6,7 +7,8 @@ import gettext
 from urllib.parse import quote_plus
 _ = gettext.gettext
 
-DB_CFG='~/.ssh/db_conf.json'
+DB_ROOT='~/work/.database/'
+DB_CFG=DB_ROOT+'db_conf.json'
 
 DB_MYSQL = '1'
 DB_PGSQL = '2'
@@ -40,7 +42,7 @@ def getDBlist()->list:
         lst.append({'name': dbid, 'desc': '', 'type': 'conn', 'subtype': subtype, 'fix': 1})
 
     for dbid, e in _getCfgEntryList().items():
-        lst.append({'name': dbid, 'desc': '', 'type': 'conn', 'subtype': int(e['db_type'])})
+        lst.append({'name': dbid, 'desc': e['name'], 'type': 'conn', 'subtype': int(e['db_type'])})
 
     return lst
 
@@ -83,7 +85,9 @@ def _getSQL_engine(dbid, db, usedb=None):
 
     db_host = db['db_host'] if 'db_host' in db else ''
     db_name = db['db_name'] if 'db_name' in db else ''
-    if usedb is not None:
+
+    if usedb is not None and db['db_type'] in [DB_MYSQL, DB_HIVE_LDAP, DB_HIVE_KERBEROS]:
+        # 对于 myql, hive database / schema 等价
         db_name=usedb
 
     if db['db_type'] == DB_HIVE_KERBEROS:  # Hive-kerberos
@@ -130,6 +134,14 @@ def _getSQL_engine(dbid, db, usedb=None):
         sqlstr = f"hive://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
         return sqlalchemy.create_engine(sqlstr, connect_args={'auth': 'LDAP'})
     elif db['db_type'] == DB_SQLITE:  # SQLITE
+        if db_name[0]!='/' and db_name!=':memory:':
+            db_name=os.path.expanduser(DB_ROOT+db_name)
+
+        # make sure parent dir exists
+        dir_name = os.path.dirname(db_name)
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+
         sqlstr = f"sqlite+pysqlite:///{db_name}"
         return sqlalchemy.create_engine(sqlstr)
     else:
@@ -169,9 +181,39 @@ def getEngine(dbid, usedb=None):
         return _getSQL_engine(dbid, dbinfo, usedb)
 
 def addEntry(dbinfo, dbfile=DB_CFG):
-    # fixme : valid  dbinfo
     dbid = dbinfo['db_id']
+    err=''
+
+    if 'db_type' not in dbinfo:
+        raise Exception('must set db type.')
+
+    if dbinfo['db_type'] != DB_SQLITE:
+        if 'db_host' not in dbinfo:
+            err='must set ip addr.'
+
+    if dbinfo['db_type'] == DB_PGSQL:
+        if 'db_name' not in dbinfo:
+            err='postgres must set database name to connect'
+
+    # check dataname format
+    if dbinfo['db_type'] == DB_SQLITE:
+        if 'db_name' not in dbinfo:
+            err="sqlite must set db name ( it's a database file )"
+    elif 'db_name' in dbinfo:
+        if not re.match(r'^[a-zA-Z0-9_]+$', dbinfo['db_name']):
+            err='db name can only contain letters, numbers, and underscores.'
+
+    fix_dbs =_getDBlist()
     dbcfg=_getCfgEntryList(dbfile)
+    if dbid in fix_dbs or dbid in dbcfg:
+        err=f'db_id {dbid} already exists.'
+
+    if 'name' not in dbinfo:
+        dbinfo['name']=''
+
+    if err!='':
+        raise Exception(err)
+
     dbcfg[dbid]=dbinfo
     cfg=json.dumps(dbcfg, indent=4)
     with open_dbfile(dbfile) as f:

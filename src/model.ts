@@ -156,7 +156,8 @@ export class SqlModel {
       }
     }
     return cur_list.map(
-      ({ name, desc, type, subtype, fix}) => ({ name, desc, type, subtype, fix } as IDbItem)
+      ({ name, desc, type, subtype, fix }) =>
+        ({ name, desc, type, subtype, fix } as IDbItem)
     );
   }
 
@@ -168,11 +169,13 @@ export class SqlModel {
         type: 'conn',
         name: db_id,
         desc: name,
+        subtype: parseInt(conn.db_type),
         next: false
       });
       this.conn_changed.emit(conn.db_id);
     } else {
-      //this.need_passwd.emit(pass_info)
+      conn.errmsg = rc.message || '';
+      this.create_conn.emit(conn);
     }
   };
 
@@ -215,10 +218,15 @@ export class SqlModel {
     return this._conn_changed;
   }
 
+  get create_conn(): Signal<SqlModel, IDBConn> {
+    return this._conn_create;
+  }
+
   private _item_list: IDbItem[] = [];
   private _need_passwd = new Signal<SqlModel, IPass>(this);
   private _passwd_settled = new Signal<SqlModel, string>(this);
   private _conn_changed = new Signal<SqlModel, string>(this);
+  private _conn_create = new Signal<SqlModel, IDBConn>(this);
 }
 
 /**

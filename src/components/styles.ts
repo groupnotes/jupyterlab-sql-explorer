@@ -69,7 +69,7 @@ export const divListStyle = style({
   display: 'flex',
   alignItems: 'center',
   $nest: {
-    '&:hover': {
+    [`&:hover:not(.${activeStyle})`]: {
       background: 'var(--jp-layout-color2)'
     },
     '&>span:first-child': {
@@ -79,13 +79,23 @@ export const divListStyle = style({
     '&>.name': {
       marginRight: 5,
       fontWeight: 'bold',
-      maxWidth: '80%',
+      maxWidth: '100%',
+      minWidth: '30%',
       overflow: 'hidden',
-      display: 'inline-flex',
-      textOverflow: 'ellipsis'
+      textOverflow: 'ellipsis',
+      height: 25,
+      whiteSpace: 'nowrap'
     },
     '&>.memo': {
-      marginRight: 5
+      marginRight: 5,
+      height: 25,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    },
+
+    [`&.${activeStyle} .jp-icon-selectable[fill]`]: {
+      fill: '#fff'
     }
   }
 });
@@ -127,4 +137,8 @@ export const loadingStyle = style({
   marginLeft: 10,
   marginRight: 10,
   marginTop: 6
+});
+
+export const errStyle = style({
+  color: 'red'
 });

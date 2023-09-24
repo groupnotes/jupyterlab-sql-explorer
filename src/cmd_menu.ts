@@ -1,12 +1,11 @@
 import { JupyterFrontEnd } from '@jupyterlab/application';
-import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { CommandRegistry } from '@lumino/commands';
 //import { ContextMenu, DockPanel, Menu, Panel, Widget } from '@lumino/widgets';
 import { Menu } from '@lumino/widgets';
 import { TranslationBundle } from '@jupyterlab/translation';
 import { IDBConn } from './interfaces';
 import { SqlModel } from './model';
-import { ConnDialog } from './components/new_conn';
+import { createNewConn } from './components/new_conn';
 
 // add command add menu
 export enum CommandIDs {
@@ -35,18 +34,7 @@ export function addCommands(
     label: trans.__('New Connection'),
     caption: trans.__('Create New Database Connection'),
     execute: async (data?: Partial<IDBConn>) => {
-      const result = await showDialog<IDBConn>({
-        title: trans.__('Create New DB connection'),
-        body: new ConnDialog(data as IDBConn, trans),
-        buttons: [
-          Dialog.cancelButton(),
-          Dialog.okButton({ label: trans.__('Submit') })
-        ]
-      });
-      if (result.value) {
-        console.log('Submitted:', result.value);
-        model.add_conn(result.value);
-      }
+      createNewConn(data || {}, model, trans);
     }
   });
 

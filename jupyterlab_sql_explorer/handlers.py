@@ -16,15 +16,25 @@ class ConnHandler(APIHandler):
 
     @tornado.web.authenticated
     def post(self):
-        data = self.get_json_body()
-        engine.addEntry(data)
-        self.finish(json.dumps({'data': engine.getDBlist()}))
+        try:
+            data = self.get_json_body()
+            engine.addEntry(data)
+            self.finish(json.dumps({'data': engine.getDBlist()}))
+        except Exception as err:
+            self.log.error(err)
+            traceback.print_exc()
+            self.finish(json.dumps({'error': str(err)}))
 
     @tornado.web.authenticated
     def put(self):
-        data = self.get_json_body()
-        engine.addEntry(data)
-        self.finish(json.dumps({'data': engine.getDBlist()}))
+        try:
+            data = self.get_json_body()
+            engine.addEntry(data)
+            self.finish(json.dumps({'data': engine.getDBlist()}))
+        except Exception as err:
+            self.log.error(err)
+            traceback.print_exc()
+            self.finish(json.dumps({'error': str(err)}))
 
     @tornado.web.authenticated
     def delete(self):
@@ -60,7 +70,7 @@ class TabColumnHandler(APIHandler):
     @tornado.web.authenticated
     def get(self):
         dbid = self.get_argument('dbid')
-        database = self.get_argument('db')
+        database = self.get_argument('db', None)
         tbl = self.get_argument('tbl')
         try:
             st, db_user=engine.check_pass(dbid)
