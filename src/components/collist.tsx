@@ -200,7 +200,11 @@ export class ColList extends React.Component<TColProps, TColState> {
       sql += '*';
     } else {
       const cols = new Array<string>();
-      checked.forEach(c => cols.push(`    t.${c} /* ${col_names[c]} */`));
+      checked.forEach(c => {
+          const comment=col_names[c].trim()
+          if (comment) cols.push(`    t.${c} /* ${comment} */`);
+          else cols.push(`    t.${c}`)
+      });
       sql += '\n' + cols.join(',\n');
     }
     sql +=

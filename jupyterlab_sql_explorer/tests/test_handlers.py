@@ -16,7 +16,7 @@ async def test_conn(jp_fetch):
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {
-        "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn'}]
+        "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn', 'subtype': 6}]
     }
 
     response = await jp_fetch("jupyterlab-sql-explorer", "conns",
@@ -24,14 +24,20 @@ async def test_conn(jp_fetch):
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {
-        "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn'}, {'name': 'add2', 'desc': '', 'type': 'conn'}]
+        "data": old['data'] + [
+            {'name': 'add', 'desc': '', 'type': 'conn', 'subtype': 6},
+            {'name': 'add2', 'desc': '', 'type': 'conn', 'subtype': 6}
+        ]
     }
 
     response = await jp_fetch("jupyterlab-sql-explorer", "conns")
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {
-        "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn'}, {'name': 'add2', 'desc': '', 'type': 'conn'}]
+        "data": old['data'] + [
+            {'name': 'add', 'desc': '', 'type': 'conn', 'subtype': 6},
+            {'name': 'add2', 'desc': '', 'type': 'conn', 'subtype': 6}
+        ]
     }
 
     response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': 'add'})
@@ -42,8 +48,7 @@ async def test_conn(jp_fetch):
     response = await jp_fetch("jupyterlab-sql-explorer", "conns", method='DELETE', params={'dbid': 'add'})
     assert response.code == 200
     payload = json.loads(response.body)
-    assert payload == { "data":  old['data'] + [{'name': 'add2', 'desc': '', 'type': 'conn'}]}
-
+    assert payload == {"data": old['data'] + [{'name': 'add2', 'desc': '', 'type': 'conn', 'subtype': 6}]}
 
 @patch("jupyterlab_sql_explorer.handlers.engine._getDbInfo")
 async def test_passwd(mock_engine, jp_fetch):

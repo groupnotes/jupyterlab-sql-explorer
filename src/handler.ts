@@ -137,7 +137,6 @@ export const load_tree_root = async (): Promise<ITreeCmdRes> => {
 
 export const load_tree_db_node = async (dbid: string): Promise<ITreeCmdRes> => {
   return await load_db_tree('dbtables', { dbid });
-  //return { status: 'NEED-PASS', pass_info:{db_id:'DB_ID', db_user:'root'}}
 };
 
 export const load_tree_table_node = async (

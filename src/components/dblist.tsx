@@ -8,9 +8,19 @@ import { FixedSizeList as List } from 'react-window';
 import { Loading } from './loading';
 import AutoSizer from '../auto_resizer';
 
-import { IDbItem } from '../interfaces';
+import { IDbItem, ConnType } from '../interfaces';
 import { IJpServices } from '../JpServices';
-import { queryIcon, connIcon, sqlIcon, tabIcon, connAddIcon } from '../icons';
+import {
+  queryIcon,
+  oracleIcon,
+  sqlIcon,
+  tabIcon,
+  connAddIcon,
+  hiveIcon,
+  pgsqlIcon,
+  mysqlIcon,
+  sqliteIcon
+} from '../icons';
 import {
   tbStyle,
   listStyle,
@@ -91,6 +101,7 @@ export class ConnList extends React.Component<
       this.props;
     const { trans } = jp_services as IJpServices;
     const { sel_name } = this.state;
+    console.log(list)
     return (
       <>
         <div className={tbStyle}>
@@ -123,7 +134,22 @@ export class ConnList extends React.Component<
                 title={p.name + '\n' + p.desc}
                 onContextMenu={event => this._handleContextMenu(event, p)}
               >
-                <connIcon.react tag="span" width="16px" height="16px" />
+                {(p.subtype as ConnType) === ConnType.DB_MYSQL && (
+                  <mysqlIcon.react tag="span" width="16px" height="16px" />
+                )}
+                {(p.subtype as ConnType) === ConnType.DB_PGSQL && (
+                  <pgsqlIcon.react tag="span" width="16px" height="16px" />
+                )}
+                {((p.subtype as ConnType) === ConnType.DB_HIVE_LDAP ||
+                  (p.subtype as ConnType) === ConnType.DB_HIVE_KERBEROS) && (
+                  <hiveIcon.react tag="span" width="16px" height="16px" />
+                )}
+                {(p.subtype as ConnType) === ConnType.DB_SQLITE && (
+                  <sqliteIcon.react tag="span" width="16px" height="16px" />
+                )}
+                {(p.subtype as ConnType) === ConnType.DB_ORACLE && (
+                  <oracleIcon.react tag="span" width="16px" height="16px" />
+                )}
                 <span className="name">{p.name}</span>
                 <span className="memo">{p.desc}</span>
               </li>

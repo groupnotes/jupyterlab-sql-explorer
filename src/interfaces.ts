@@ -1,7 +1,17 @@
+export enum ConnType {
+  DB_MYSQL = 1,
+  DB_PGSQL = 2,
+  DB_ORACLE = 3,
+  DB_HIVE_LDAP = 4,
+  DB_HIVE_KERBEROS = 5,
+  DB_SQLITE = 6
+}
+
 export interface IDbItem {
   type: string;
   name: string;
-  subtype?: string;
+  subtype?: ConnType | string;
+  fix?: boolean;
   desc?: string;
   next?: IDbItem[] | false;
 }

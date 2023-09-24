@@ -9,6 +9,11 @@ import querySvg from '../style/icons/query.svg';
 import connAddSvg from '../style/icons/conn-add.svg';
 import errorSvg from '../style/icons/error.svg';
 import sqlScSvg from '../style/icons/sql_script.svg';
+import hiveSvg from '../style/icons/hive.svg';
+import pgsqlSvg from '../style/icons/pgsql.svg';
+import mysqlSvg from '../style/icons/mysql.svg';
+import sqliteSvg from '../style/icons/sqlite.svg';
+import oracleSvg from '../style/icons/oracle.svg';
 
 export const sqlIcon = new LabIcon({
   name: 'sql-explorer',
@@ -53,4 +58,29 @@ export const connAddIcon = new LabIcon({
 export const errorIcon = new LabIcon({
   name: 'sql-explorer:error',
   svgstr: errorSvg
+});
+
+export const hiveIcon = new LabIcon({
+  name: 'sql-explorer:hive',
+  svgstr: hiveSvg
+});
+
+export const pgsqlIcon = new LabIcon({
+  name: 'sql-explorer:pgsql',
+  svgstr: pgsqlSvg
+});
+
+export const mysqlIcon = new LabIcon({
+  name: 'sql-explorer:mysql',
+  svgstr: mysqlSvg
+});
+
+export const sqliteIcon = new LabIcon({
+  name: 'sql-explorer:sqlite',
+  svgstr: sqliteSvg
+});
+
+export const oracleIcon = new LabIcon({
+  name: 'sql-explorer:oracle',
+  svgstr: oracleSvg
 });

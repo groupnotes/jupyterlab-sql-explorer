@@ -35,11 +35,12 @@ def getDBlist()->list:
     lst=[]
 
     for dbid in dbs:
-        # info = _getDbInfo(dbid)
-        lst.append({'name': dbid, 'desc': '', 'type': 'conn', 'subtype': 'f'})
+        info = _getDbInfo(dbid)
+        subtype = int(info['db_type'])
+        lst.append({'name': dbid, 'desc': '', 'type': 'conn', 'subtype': subtype, 'fix': 1})
 
     for dbid, e in _getCfgEntryList().items():
-        lst.append({'name': dbid, 'desc': '', 'type': 'conn'})
+        lst.append({'name': dbid, 'desc': '', 'type': 'conn', 'subtype': int(e['db_type'])})
 
     return lst
 

@@ -156,7 +156,7 @@ export class SqlModel {
       }
     }
     return cur_list.map(
-      ({ name, desc, type }) => ({ name, desc, type } as IDbItem)
+      ({ name, desc, type, subtype, fix}) => ({ name, desc, type, subtype, fix } as IDbItem)
     );
   }
 
