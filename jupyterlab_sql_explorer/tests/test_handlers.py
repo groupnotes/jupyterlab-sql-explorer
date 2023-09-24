@@ -19,17 +19,31 @@ async def test_conn(jp_fetch):
         "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn'}]
     }
 
+    response = await jp_fetch("jupyterlab-sql-explorer", "conns",
+        method='POST', body=json.dumps({"db_id": "add2", "db_name":":memory:", "db_type":'6'}))
+    assert response.code == 200
+    payload = json.loads(response.body)
+    assert payload == {
+        "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn'}, {'name': 'add2', 'desc': '', 'type': 'conn'}]
+    }
+
     response = await jp_fetch("jupyterlab-sql-explorer", "conns")
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {
-        "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn'}]
+        "data": old['data'] + [{'name': 'add', 'desc': '', 'type': 'conn'}, {'name': 'add2', 'desc': '', 'type': 'conn'}]
     }
 
-    response = await jp_fetch("jupyterlab-sql-explorer", "conns", method='DELETE', params={'dbid':'add'})
+    response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': 'add'})
     assert response.code == 200
     payload = json.loads(response.body)
-    assert payload == old
+    assert payload == {'data': []}
+
+    response = await jp_fetch("jupyterlab-sql-explorer", "conns", method='DELETE', params={'dbid': 'add'})
+    assert response.code == 200
+    payload = json.loads(response.body)
+    assert payload == { "data":  old['data'] + [{'name': 'add2', 'desc': '', 'type': 'conn'}]}
+
 
 @patch("jupyterlab_sql_explorer.handlers.engine._getDbInfo")
 async def test_passwd(mock_engine, jp_fetch):

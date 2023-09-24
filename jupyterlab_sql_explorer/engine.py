@@ -6,7 +6,7 @@ import gettext
 from urllib.parse import quote_plus
 _ = gettext.gettext
 
-DB_CFG='~/.ssh/db1_conf.json'
+DB_CFG='~/.ssh/db_conf.json'
 
 DB_MYSQL = '1'
 DB_PGSQL = '2'
@@ -56,11 +56,9 @@ def _getCfgEntryList(passfile=DB_CFG)->list:
     return dblst
 
 def _getCfgEntry(name, passfile=DB_CFG):
-    if os.path.exists(passfile):
-        with open(passfile, mode='rt') as f:
-            dblst = json.load(f)
-        if name in dblst:
-            return dblst[name]
+    dblst = _getCfgEntryList(passfile)
+    if name in dblst:
+        return dblst[name]
     return None
 
 def _getDbInfo(name: str)-> 'dict | None':
@@ -172,18 +170,11 @@ def getEngine(dbid, usedb=None):
 def addEntry(dbinfo, dbfile=DB_CFG):
     # fixme : valid  dbinfo
     dbid = dbinfo['db_id']
-
-    if os.path.exists(dbfile):
-        with open(dbfile, mode='rt') as f:
-            dbcfg=json.load(f)
-    else:
-        dbcfg={}
-
+    dbcfg=_getCfgEntryList(dbfile)
     dbcfg[dbid]=dbinfo
     cfg=json.dumps(dbcfg, indent=4)
     with open_dbfile(dbfile) as f:
         f.write(cfg)
-
     return dbinfo
 
 def delEntry(dbid, dbfile=DB_CFG):
