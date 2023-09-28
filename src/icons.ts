@@ -3,11 +3,13 @@ import { LabIcon } from '@jupyterlab/ui-components';
 import sqlSvg from '../style/icons/sql.svg';
 import connSvg from '../style/icons/conn.svg';
 import tabSvg from '../style/icons/table.svg';
+import viewSvg from '../style/icons/view.svg';
 import rootSvg from '../style/icons/root.svg';
 import colSvg from '../style/icons/column.svg';
 import querySvg from '../style/icons/query.svg';
 import connAddSvg from '../style/icons/conn-add.svg';
 import errorSvg from '../style/icons/error.svg';
+import deleteSvg from '../style/icons/delete.svg';
 import sqlScSvg from '../style/icons/sql_script.svg';
 import hiveSvg from '../style/icons/hive.svg';
 import pgsqlSvg from '../style/icons/pgsql.svg';
@@ -33,6 +35,11 @@ export const connIcon = new LabIcon({
 export const tabIcon = new LabIcon({
   name: 'sql-explorer:tab',
   svgstr: tabSvg
+});
+
+export const viewIcon = new LabIcon({
+  name: 'sql-explorer:view',
+  svgstr: viewSvg
 });
 
 export const rootIcon = new LabIcon({
@@ -83,4 +90,9 @@ export const sqliteIcon = new LabIcon({
 export const oracleIcon = new LabIcon({
   name: 'sql-explorer:oracle',
   svgstr: oracleSvg
+});
+
+export const deleteIcon = new LabIcon({
+  name: 'sql-explorer:del',
+  svgstr: deleteSvg
 });

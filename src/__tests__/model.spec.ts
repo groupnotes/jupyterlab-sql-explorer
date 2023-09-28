@@ -91,14 +91,24 @@ describe('test model', () => {
     });
     (load_tree_table_node as jest.Mock).mockReturnValue({
       status: 'OK',
-      data: [{ name: 'TB1', desc: 'TB1', type: 'table' }]
+      data: [{ name: 'TB1', desc: 'TB1', type: 'table', subtype: 'V' }]
     });
     (load_tree_col_node as jest.Mock).mockReturnValue({
       status: 'OK',
       data: [{ name: 'COL1', desc: 'COL1', type: 'col' }]
     });
+      
     let m = new SqlModel();
-    const path: IDbItem[] = [
+    let path: IDbItem[] = [
+      { name: 'CONN1', type: 'conn' },
+      { name: 'DB1', type: 'db' },
+    ];
+    await m.load_path(path);
+    expect(m.get_list(path)).toEqual([
+      { name: 'TB1', desc: 'TB1', type: 'table', subtype: 'V' }
+    ]);
+      
+    path = [
       { name: 'CONN1', type: 'conn' },
       { name: 'DB1', type: 'db' },
       { name: 'TB1', type: 'table' }

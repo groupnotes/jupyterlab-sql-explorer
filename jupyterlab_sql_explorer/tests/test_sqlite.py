@@ -25,11 +25,26 @@ async def test_sqlite_dbtable(mock_dbinfo, jp_fetch):
     payload = json.loads(response.body)
     assert payload == {'data': {}}
 
+    response = await jp_fetch("jupyterlab-sql-explorer", "query",
+                              method='POST',
+                              body=json.dumps({'dbid': 'testdb', 'sql': 'create view BBB as select * from AAA'}))
+    assert response.code == 200
+    payload = json.loads(response.body)
+    assert payload['error'] == 'RETRY'
+
+    response = await jp_fetch("jupyterlab-sql-explorer", "query", params={'taskid': payload['data']})
+    assert response.code == 200
+    payload = json.loads(response.body)
+    assert payload == {'data': {}}
+
     response = await jp_fetch("jupyterlab-sql-explorer", "dbtables", params={'dbid': 'testdb'})
     assert response.code == 200
     payload = json.loads(response.body)
-    assert payload == {"data": [{'name': 'AAA', 'desc': '', 'type': 'table'}]}
-    
+    assert payload == {"data": [
+        {'name': 'AAA', 'desc': '', 'type': 'table', 'subtype': 'T'},
+        {'name': 'BBB', 'desc': '', 'type': 'table', 'subtype': 'V'}
+    ]}
+
     response = await jp_fetch("jupyterlab-sql-explorer", "columns", params={'dbid': 'testdb', 'db': '', 'tbl': 'AAA'})
     assert response.code == 200
     payload = json.loads(response.body)

@@ -123,7 +123,7 @@ class QueryHandler(APIHandler):
             if not st:
                 self.finish(json.dumps({'error': 'NEED-PASS', 'pass_info': {'db_id': qdata['dbid'], 'db_user': db_user}}))
             else:
-                taskid = await task.create_query_task(db.query_header, qdata['dbid'], qdata['sql'])
+                taskid = await task.create_query_task(db.query_exec, qdata['dbid'], qdata['sql'])
                 self.finish(json.dumps({'error': 'RETRY', 'data': taskid}))
         except Exception as err:
             self.log.error(err)

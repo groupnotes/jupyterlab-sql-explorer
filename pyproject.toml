@@ -24,7 +24,8 @@ classifiers = [
 ]
 dependencies = [
     "jupyter_server>=1.21,<3",
-    "sqlalchemy>=1.4,<2"
+    "sqlalchemy>=1.4,<2",
+    "sqlparse>=0.44"
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 

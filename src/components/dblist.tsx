@@ -4,7 +4,7 @@ import { Clipboard } from '@jupyterlab/apputils';
 import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { CommandRegistry } from '@lumino/commands';
 import { TranslationBundle } from '@jupyterlab/translation';
-import { refreshIcon, deleteIcon, clearIcon } from '@jupyterlab/ui-components';
+import { refreshIcon, clearIcon } from '@jupyterlab/ui-components';
 import { FixedSizeList as List } from 'react-window';
 import { Loading } from './loading';
 import AutoSizer from '../auto_resizer';
@@ -16,11 +16,13 @@ import {
   oracleIcon,
   sqlIcon,
   tabIcon,
+  viewIcon,
   connAddIcon,
   hiveIcon,
   pgsqlIcon,
   mysqlIcon,
-  sqliteIcon
+  sqliteIcon,
+  deleteIcon
 } from '../icons';
 import {
   tbStyle,
@@ -71,6 +73,12 @@ export class ConnList extends React.Component<
     const clear_pass = 'clean-pass';
     const open_console = 'open-console';
 
+    commands.addCommand(open_console, {
+      label: trans.__('Open Sql Console'),
+      icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._open_console
+    });
+    
     commands.addCommand(del, {
       label: trans.__('Del Connection'),
       //iconClass: 'jp-MaterialIcon jp-CopyIcon',
@@ -84,16 +92,10 @@ export class ConnList extends React.Component<
       execute: this._clear_pass
     });
 
-    commands.addCommand(open_console, {
-      label: trans.__('Open Sql Console'),
-      icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
-      execute: this._open_console
-    });
-
     const menu = new Menu({ commands });
+    menu.addItem({ command: open_console });
     menu.addItem({ command: del });
     menu.addItem({ command: clear_pass });
-    menu.addItem({ command: open_console });
     return menu;
   }
 
@@ -102,7 +104,6 @@ export class ConnList extends React.Component<
       this.props;
     const { trans } = jp_services as IJpServices;
     const { sel_name } = this.state;
-    console.log(list);
     return (
       <>
         <div className={tbStyle}>
@@ -239,7 +240,7 @@ export const DBList: React.FC<ListProps> = ({
             verticalAlign="text-top"
           />
         )}
-        {p.type === 'table' && (
+        {p.type === 'table' &&  p.subtype!=='V' && (
           <tabIcon.react
             tag="span"
             width="16px"
@@ -247,6 +248,14 @@ export const DBList: React.FC<ListProps> = ({
             verticalAlign="text-top"
           />
         )}
+        {p.type === 'table' &&  p.subtype==='V' && (
+          <viewIcon.react
+            tag="span"
+            width="16px"
+            height="16px"
+            verticalAlign="text-top"
+          />
+        )}    
         <span className="name">{p.name}</span>
         <span className="memo">{p.desc}</span>
       </div>
@@ -336,6 +345,7 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
       data: any;
     }) => {
       const p = data[index];
+      console.log(p)
       return (
         <div
           key={index}
@@ -347,13 +357,21 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
           }
           onContextMenu={event => this._handleContextMenu(event, p)}
         >
-          <tabIcon.react
+          {p.type === 'table' &&  p.subtype!=='V' && (<tabIcon.react
             tag="span"
             width="14px"
             height="14px"
             right="5px"
             verticalAlign="text-top"
-          />
+          />)}
+          {p.type === 'table' &&  p.subtype==='V' && (
+              <viewIcon.react
+                tag="span"
+                width="16px"
+                height="16px"
+                verticalAlign="text-top"
+              />
+          )}  
           <span className="name">{p.name}</span>
           <span className="memo">{p.desc}</span>
         </div>

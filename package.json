@@ -1,11 +1,17 @@
 {
   "name": "jupyterlab-sql-explorer",
-  "version": "0.1.0",
-  "description": "a sql tools for jupyterlab",
+  "version": "0.1.1",
+  "description": "A JupyterLab extension for Database",
   "keywords": [
     "jupyter",
     "jupyterlab",
-    "jupyterlab-extension"
+    "jupyterlab-extension",
+    "sql",
+    "database",
+    "hive", 
+    "mysql",
+    "postgresql",
+    "sqlite"
   ],
   "homepage": "https://github.com/groupnotes/jupyterlab-sql-explorer",
   "bugs": {
@@ -13,8 +19,7 @@
   },
   "license": "BSD-3-Clause",
   "author": {
-    "name": "esc",
-    "email": "me@test.com"
+    "name": "groupnotes"
   },
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
@@ -26,7 +31,7 @@
   "style": "style/index.css",
   "repository": {
     "type": "git",
-    "url": ".git"
+    "url": "https://github.com/groupnotes/jupyterlab-sql-explorer.git"
   },
   "scripts": {
     "build": "jlpm build:lib && jlpm build:labextension:dev",
@@ -108,13 +113,35 @@
           "pip"
         ],
         "base": {
-          "name": "jupyterlab-sql-explorer"
+          "name": "jupyterlab_sql_explorer"
         }
       }
     },
     "extension": true,
     "outputDir": "jupyterlab_sql_explorer/labextension",
-    "schemaDir": "schema"
+    "schemaDir": "schema",
+    "sharedPackages": {
+        "codemirror": {
+            "bundled": false,
+            "singleton": true
+        },
+        "react": {
+            "bundled": false,
+            "singleton": true
+        },
+        "react-dom": {
+            "bundled": false,
+            "singleton": true
+        },
+        "@lumino/datagrid": {
+            "bundled": true,
+            "singleton": true
+        },
+        "@jupyterlab/application": {
+            "bundled": false,
+            "singleton": true
+        }
+    }
   },
   "eslintIgnore": [
     "node_modules",
