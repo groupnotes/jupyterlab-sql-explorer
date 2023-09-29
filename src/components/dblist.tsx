@@ -46,7 +46,9 @@ type ListProps = {
   list: Array<IDbItem>;
   onRefresh: () => any;
   filter: string;
-  wait?: boolean;
+  wait?: boolean; 
+  dbid?: string;
+  schema?: string;
   jp_services?: IJpServices;
   trans: TranslationBundle;
 };
@@ -308,6 +310,12 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
     const commands = new CommandRegistry();
     const copy = 'copyName';
     const copy_all = 'copyAll';
+    const open_console = 'open-console';  
+    commands.addCommand(open_console, {
+      label: trans.__('Open Sql Console'),
+      icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._open_console
+    });  
     commands.addCommand(copy, {
       label: trans.__('Copy Table Name'),
       iconClass: 'jp-MaterialIcon jp-CopyIcon',
@@ -319,6 +327,7 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
       execute: this._copyToClipboard('all')
     });
     const menu = new Menu({ commands });
+    menu.addItem({ command: open_console });  
     menu.addItem({ command: copy });
     menu.addItem({ command: copy_all });
     return menu;
@@ -345,7 +354,6 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
       data: any;
     }) => {
       const p = data[index];
-      console.log(p)
       return (
         <div
           key={index}
@@ -423,12 +431,21 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
 
   private _copyToClipboard = (t: string) => () => {
     const { name, desc } = this._sel_item;
+    const { schema } = this.props;
     const comment = desc?.trim();
     if (t === 'all' && comment !== '') {
-      Clipboard.copyToSystem(`${name} /* ${comment} */`);
+      Clipboard.copyToSystem(`${schema}.${name} /* ${comment} */`);
     } else {
-      Clipboard.copyToSystem(name);
+      Clipboard.copyToSystem(`${schema}.${name}`);
     }
+  };
+
+  private _open_console = () => {
+    const qmodel = new QueryModel({
+      dbid: this.props.dbid as string,
+      conn_readonly: true
+    });
+    newSqlConsole(qmodel, '', this.props.jp_services as IJpServices);
   };
 
   private readonly _contextMenu: Menu;

@@ -184,9 +184,12 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
           <TbList
             onSelect={this._select}
             trans={trans}
+            jp_services={jp_services}
             list={model.get_list(path)}
             filter={filter_l}
             wait={wait}
+            dbid={path[0].name}  
+            schema={path[1].name}    
             onRefresh={this._refresh}
           />
         )}
