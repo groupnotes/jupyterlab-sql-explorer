@@ -11,7 +11,7 @@ type TChgFun = (event: React.ChangeEvent<any>) => void;
 type InputProps = {
   name: string;
   value?: string;
-  placeholder?:string;
+  placeholder?: string;
   onChange: TChgFun;
 };
 
@@ -23,7 +23,12 @@ const Inp: React.FC<InputProps> = ({
 }): React.ReactElement => (
   <div className="jp-sql-exp-input">
     <span>{name}</span>
-    <input className="bp3-input" placeholder={placeholder} value={value || ''} onChange={onChange} />
+    <input
+      className="bp3-input"
+      placeholder={placeholder}
+      value={value || ''}
+      onChange={onChange}
+    />
   </div>
 );
 
@@ -88,7 +93,12 @@ class ConnForm extends React.Component<IConnFormProps, Partial<IDBConn>> {
             value={name}
             onChange={this._onChange('name')}
           />
-          <Inp name="ID" value={db_id} placeholder={trans.__('Unique ID')} onChange={this._onChange('db_id')} />
+          <Inp
+            name="ID"
+            value={db_id}
+            placeholder={trans.__('Unique ID')}
+            onChange={this._onChange('db_id')}
+          />
           <div className="jp-sql-exp-input">
             <span>{trans.__('Type')}</span>
             <select
@@ -109,25 +119,25 @@ class ConnForm extends React.Component<IConnFormProps, Partial<IDBConn>> {
               <Inp
                 name={trans.__('IP')}
                 value={db_host}
-                placeholder={trans.__('ip addr of db server')}    
+                placeholder={trans.__('ip addr of db server')}
                 onChange={this._onChange('db_host')}
               />
               <Inp
                 name={trans.__('PORT')}
                 value={db_port}
-                placeholder={trans.__('Leave blank to use default port.')}      
+                placeholder={trans.__('Leave blank to use default port.')}
                 onChange={this._onChange('db_port')}
               />
               <Inp
                 name={trans.__('User')}
                 value={db_user}
-                placeholder={trans.__('Leave blank for user input.')}      
+                placeholder={trans.__('Leave blank for user input.')}
                 onChange={this._onChange('db_user')}
               />
               <Inp
                 name={trans.__('Pass')}
                 value={db_pass}
-                placeholder={trans.__('Leave blank for user input.')} 
+                placeholder={trans.__('Leave blank for user input.')}
                 onChange={this._onChange('db_pass')}
               />
             </>
@@ -135,7 +145,7 @@ class ConnForm extends React.Component<IConnFormProps, Partial<IDBConn>> {
           <Inp
             name={trans.__('Database')}
             value={db_name}
-            placeholder={trans.__('database/schema default connect to')}  
+            placeholder={trans.__('database/schema default connect to')}
             onChange={this._onChange('db_name')}
           />
         </div>

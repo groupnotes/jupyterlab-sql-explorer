@@ -8,7 +8,7 @@
     "jupyterlab-extension",
     "sql",
     "database",
-    "hive", 
+    "hive",
     "mysql",
     "postgresql",
     "sqlite"
@@ -121,26 +121,26 @@
     "outputDir": "jupyterlab_sql_explorer/labextension",
     "schemaDir": "schema",
     "sharedPackages": {
-        "codemirror": {
-            "bundled": false,
-            "singleton": true
-        },
-        "react": {
-            "bundled": false,
-            "singleton": true
-        },
-        "react-dom": {
-            "bundled": false,
-            "singleton": true
-        },
-        "@lumino/datagrid": {
-            "bundled": true,
-            "singleton": true
-        },
-        "@jupyterlab/application": {
-            "bundled": false,
-            "singleton": true
-        }
+      "codemirror": {
+        "bundled": false,
+        "singleton": true
+      },
+      "react": {
+        "bundled": false,
+        "singleton": true
+      },
+      "react-dom": {
+        "bundled": false,
+        "singleton": true
+      },
+      "@lumino/datagrid": {
+        "bundled": true,
+        "singleton": true
+      },
+      "@jupyterlab/application": {
+        "bundled": false,
+        "singleton": true
+      }
     }
   },
   "eslintIgnore": [

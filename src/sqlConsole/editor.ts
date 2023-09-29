@@ -87,6 +87,11 @@ export class Editor implements IEditor, IDisposable {
     const segments = text.split(';');
     let segmentIndex = -1;
 
+    // if pos is at  ';\n' backword one
+    if (pos > 1 && text[pos] === '\n' && text[pos - 1] === ';') {
+      pos = pos - 1;
+    }
+
     for (let i = 0; i < segments.length; i++) {
       if (pos <= segments[i].length) {
         segmentIndex = i;

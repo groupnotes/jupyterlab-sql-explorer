@@ -109,7 +109,7 @@ export class SqlModel {
             }
             if (p.type === 'db') {
               res = await load_tree_table_node(dbid, db);
-              console.log(res)  
+              console.log(res);
             }
             if (p.type === 'table') {
               res = await load_tree_col_node(dbid, db, tbl);

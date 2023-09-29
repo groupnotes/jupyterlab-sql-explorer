@@ -305,10 +305,12 @@ export function newSqlConsole(
     widget => widget.id === id
   );
   if (widget && !widget.isDisposed) {
-    const sql = `;\n\n${init_sql}\n`;
-    ((widget as MainAreaWidget).content as SqlConsoleWidget).editor.appendText(
-      sql
-    );
+    if (init_sql !== '') {
+      const sql = `;\n\n${init_sql}\n`;
+      (
+        (widget as MainAreaWidget).content as SqlConsoleWidget
+      ).editor.appendText(sql);
+    }
   } else {
     const sql = `-- conn: ${qmodel.dbid}\n\n${init_sql}\n`;
     const model = new CodeEditor.Model({ value: sql });

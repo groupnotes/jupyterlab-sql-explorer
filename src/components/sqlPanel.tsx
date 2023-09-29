@@ -6,7 +6,7 @@ import { SqlModel } from '../model';
 import { IDbItem } from '../interfaces';
 import { IJpServices } from '../JpServices';
 import { rootIcon } from '../icons';
-import { ConnList, DBList, TbList } from './dblist';
+import { ConnList, SchemaList, TbList } from './dblist';
 import { ColList } from './collist';
 //import { newConnDialog } from './new_conn'
 import { hrStyle } from './styles';
@@ -171,12 +171,14 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
           />
         )}
         {list_type === 'conn' && (
-          <DBList
+          <SchemaList
             onSelect={this._select}
             trans={trans}
+            jp_services={jp_services}
             list={model.get_list(path)}
             filter={filter_l}
             wait={wait}
+            dbid={path[0].name}
             onRefresh={this._refresh}
           />
         )}
@@ -188,8 +190,8 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
             list={model.get_list(path)}
             filter={filter_l}
             wait={wait}
-            dbid={path[0].name}  
-            schema={path[1].name}    
+            dbid={path[0].name}
+            schema={path[1].name}
             onRefresh={this._refresh}
           />
         )}

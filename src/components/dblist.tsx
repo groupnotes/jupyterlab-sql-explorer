@@ -46,7 +46,7 @@ type ListProps = {
   list: Array<IDbItem>;
   onRefresh: () => any;
   filter: string;
-  wait?: boolean; 
+  wait?: boolean;
   dbid?: string;
   schema?: string;
   jp_services?: IJpServices;
@@ -80,7 +80,7 @@ export class ConnList extends React.Component<
       icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._open_console
     });
-    
+
     commands.addCommand(del, {
       label: trans.__('Del Connection'),
       //iconClass: 'jp-MaterialIcon jp-CopyIcon',
@@ -203,98 +203,146 @@ export class ConnList extends React.Component<
   private _sel_item!: IDbItem;
 }
 
-export const DBList: React.FC<ListProps> = ({
-  trans,
-  onSelect,
-  list,
-  onRefresh,
-  filter,
-  wait
-}): React.ReactElement => {
-  const l = list.filter(
-    p =>
-      p.name.toLowerCase().includes(filter) ||
-      (p.desc && p.desc.toLowerCase().includes(filter))
-  );
-  const Row = ({
-    index,
-    style,
-    data
-  }: {
-    index: number;
-    style: React.CSSProperties;
-    data: any;
-  }) => {
-    const p = data[index];
-    return (
-      <div
-        key={index}
-        style={style}
-        onClick={onSelect(p)}
-        title={p.name + '\n' + p.desc}
-        className={divListStyle}
-      >
-        {p.type === 'db' && (
-          <sqlIcon.react
-            tag="span"
-            width="16px"
-            height="16px"
-            verticalAlign="text-top"
-          />
-        )}
-        {p.type === 'table' &&  p.subtype!=='V' && (
-          <tabIcon.react
-            tag="span"
-            width="16px"
-            height="16px"
-            verticalAlign="text-top"
-          />
-        )}
-        {p.type === 'table' &&  p.subtype==='V' && (
-          <viewIcon.react
-            tag="span"
-            width="16px"
-            height="16px"
-            verticalAlign="text-top"
-          />
-        )}    
-        <span className="name">{p.name}</span>
-        <span className="memo">{p.desc}</span>
-      </div>
+export class SchemaList extends React.Component<
+  ListProps,
+  { sel_name?: string }
+> {
+  constructor(props: ListProps) {
+    super(props);
+    this._contextMenu = this._createContextMenu();
+    this.state = {
+      sel_name: ''
+    };
+  }
+
+  private _createContextMenu(): Menu {
+    const { trans } = this.props;
+    const commands = new CommandRegistry();
+    const open_console = 'open-console';
+    commands.addCommand(open_console, {
+      label: trans.__('Open Sql Console'),
+      icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._open_console
+    });
+    const menu = new Menu({ commands });
+    menu.addItem({ command: open_console });
+    return menu;
+  }
+
+  render(): React.ReactElement {
+    const { trans, onSelect, list, onRefresh, filter, wait } = this.props;
+    const { sel_name } = this.state;
+
+    const l = list.filter(
+      p =>
+        p.name.toLowerCase().includes(filter) ||
+        (p.desc && p.desc.toLowerCase().includes(filter))
     );
-  };
-  return (
-    <>
-      <div className={tbStyle}>
-        <div style={{ textAlign: 'right' }}>
-          <ActionBtn
-            msg={trans.__('refresh')}
-            icon={refreshIcon}
-            onClick={onRefresh}
-          />
-        </div>
-        <hr className={hrStyle} />
-      </div>
-      {wait ? (
-        <Loading />
-      ) : (
-        <AutoSizer>
-          {({ height, width }: { height: any; width: any }) => (
-            <List
-              itemCount={l.length}
-              itemData={l}
-              itemSize={25}
-              height={height - 120}
-              width={width}
-            >
-              {Row}
-            </List>
+
+    const Row = ({
+      index,
+      style,
+      data
+    }: {
+      index: number;
+      style: React.CSSProperties;
+      data: any;
+    }) => {
+      const p = data[index];
+      return (
+        <div
+          key={index}
+          style={style}
+          onClick={onSelect(p)}
+          title={p.name + '\n' + p.desc}
+          className={
+            divListStyle + ' ' + (sel_name === p.name ? activeStyle : '')
+          }
+          onContextMenu={event => this._handleContextMenu(event, p)}
+        >
+          {p.type === 'db' && (
+            <sqlIcon.react
+              tag="span"
+              width="16px"
+              height="16px"
+              verticalAlign="text-top"
+            />
           )}
-        </AutoSizer>
-      )}
-    </>
-  );
-};
+          {p.type === 'table' && p.subtype !== 'V' && (
+            <tabIcon.react
+              tag="span"
+              width="16px"
+              height="16px"
+              verticalAlign="text-top"
+            />
+          )}
+          {p.type === 'table' && p.subtype === 'V' && (
+            <viewIcon.react
+              tag="span"
+              width="16px"
+              height="16px"
+              verticalAlign="text-top"
+            />
+          )}
+          <span className="name">{p.name}</span>
+          <span className="memo">{p.desc}</span>
+        </div>
+      );
+    };
+    return (
+      <>
+        <div className={tbStyle}>
+          <div style={{ textAlign: 'right' }}>
+            <ActionBtn
+              msg={trans.__('refresh')}
+              icon={refreshIcon}
+              onClick={onRefresh}
+            />
+          </div>
+          <hr className={hrStyle} />
+        </div>
+        {wait ? (
+          <Loading />
+        ) : (
+          <AutoSizer>
+            {({ height, width }: { height: any; width: any }) => (
+              <List
+                itemCount={l.length}
+                itemData={l}
+                itemSize={25}
+                height={height - 120}
+                width={width}
+              >
+                {Row}
+              </List>
+            )}
+          </AutoSizer>
+        )}
+      </>
+    );
+  }
+
+  private _handleContextMenu = (
+    event: React.MouseEvent<any>,
+    item: IDbItem
+  ) => {
+    event.preventDefault();
+    //this._sel_item = item;
+    this.setState({ sel_name: item.name });
+    this._contextMenu.open(event.clientX, event.clientY);
+  };
+
+  private _open_console = () => {
+    const qmodel = new QueryModel({
+      dbid: this.props.dbid as string,
+      conn_readonly: true
+    });
+    newSqlConsole(qmodel, '', this.props.jp_services as IJpServices);
+  };
+
+  private readonly _contextMenu: Menu;
+  //private _sel_item!: IDbItem;
+}
 
 export class TbList extends React.Component<ListProps, { sel_name?: string }> {
   constructor(props: ListProps) {
@@ -310,12 +358,12 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
     const commands = new CommandRegistry();
     const copy = 'copyName';
     const copy_all = 'copyAll';
-    const open_console = 'open-console';  
+    const open_console = 'open-console';
     commands.addCommand(open_console, {
       label: trans.__('Open Sql Console'),
       icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._open_console
-    });  
+    });
     commands.addCommand(copy, {
       label: trans.__('Copy Table Name'),
       iconClass: 'jp-MaterialIcon jp-CopyIcon',
@@ -327,7 +375,7 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
       execute: this._copyToClipboard('all')
     });
     const menu = new Menu({ commands });
-    menu.addItem({ command: open_console });  
+    menu.addItem({ command: open_console });
     menu.addItem({ command: copy });
     menu.addItem({ command: copy_all });
     return menu;
@@ -365,21 +413,23 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
           }
           onContextMenu={event => this._handleContextMenu(event, p)}
         >
-          {p.type === 'table' &&  p.subtype!=='V' && (<tabIcon.react
-            tag="span"
-            width="14px"
-            height="14px"
-            right="5px"
-            verticalAlign="text-top"
-          />)}
-          {p.type === 'table' &&  p.subtype==='V' && (
-              <viewIcon.react
-                tag="span"
-                width="16px"
-                height="16px"
-                verticalAlign="text-top"
-              />
-          )}  
+          {p.type === 'table' && p.subtype !== 'V' && (
+            <tabIcon.react
+              tag="span"
+              width="14px"
+              height="14px"
+              right="5px"
+              verticalAlign="text-top"
+            />
+          )}
+          {p.type === 'table' && p.subtype === 'V' && (
+            <viewIcon.react
+              tag="span"
+              width="16px"
+              height="16px"
+              verticalAlign="text-top"
+            />
+          )}
           <span className="name">{p.name}</span>
           <span className="memo">{p.desc}</span>
         </div>

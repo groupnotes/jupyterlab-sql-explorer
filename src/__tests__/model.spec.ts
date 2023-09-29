@@ -97,17 +97,17 @@ describe('test model', () => {
       status: 'OK',
       data: [{ name: 'COL1', desc: 'COL1', type: 'col' }]
     });
-      
+
     let m = new SqlModel();
     let path: IDbItem[] = [
       { name: 'CONN1', type: 'conn' },
-      { name: 'DB1', type: 'db' },
+      { name: 'DB1', type: 'db' }
     ];
     await m.load_path(path);
     expect(m.get_list(path)).toEqual([
       { name: 'TB1', desc: 'TB1', type: 'table', subtype: 'V' }
     ]);
-      
+
     path = [
       { name: 'CONN1', type: 'conn' },
       { name: 'DB1', type: 'db' },
