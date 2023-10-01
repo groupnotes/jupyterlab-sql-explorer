@@ -48,6 +48,11 @@ export const listStyle = style({
     '&>li>.memo': {
       marginRight: 5
     },
+      
+    [`&>li:not(.${activeStyle})>.memo`]: {
+      color: '#888'
+    },  
+      
     '&>li>input': {
       verticalAlign: 'middle'
     },
@@ -80,7 +85,7 @@ export const divListStyle = style({
       marginRight: 5,
       fontWeight: 'bold',
       maxWidth: '100%',
-      minWidth: '30%',
+      /*minWidth: '30%',*/
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       height: 25,
@@ -92,6 +97,10 @@ export const divListStyle = style({
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
+    },
+      
+    [`&:not(.${activeStyle})>.memo`]: {
+      color: '#888'
     },
 
     [`&.${activeStyle} .jp-icon-selectable[fill]`]: {

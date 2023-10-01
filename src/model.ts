@@ -209,7 +209,7 @@ export class SqlModel {
     await clear_pass(dbid);
   };
 
-  add_comment = async (data: IComment): void => {
+  add_comment = async (data: IComment): Promise<void> => {
     const rc = await add_comment(data);
     if (rc.status === 'OK') {
       //         const function find_node(cur_list, name) {
