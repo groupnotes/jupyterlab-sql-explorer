@@ -1,15 +1,20 @@
 import * as React from 'react';
-import { Menu } from '@lumino/widgets';
-import { Clipboard } from '@jupyterlab/apputils';
+import { Menu, ContextMenu } from '@lumino/widgets';
+import { Clipboard, InputDialog } from '@jupyterlab/apputils';
 import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { CommandRegistry } from '@lumino/commands';
 import { TranslationBundle } from '@jupyterlab/translation';
-import { refreshIcon, clearIcon } from '@jupyterlab/ui-components';
+import {
+  refreshIcon,
+  clearIcon,
+  copyIcon,
+  editIcon
+} from '@jupyterlab/ui-components';
 import { FixedSizeList as List } from 'react-window';
 import { Loading } from './loading';
 import AutoSizer from '../auto_resizer';
 
-import { IDbItem, ConnType } from '../interfaces';
+import { IDbItem, ConnType, CommentType, IComment } from '../interfaces';
 import { IJpServices } from '../JpServices';
 import {
   queryIcon,
@@ -74,6 +79,7 @@ export class ConnList extends React.Component<
     const del = 'del';
     const clear_pass = 'clean-pass';
     const open_console = 'open-console';
+    const edit = 'edit';
 
     commands.addCommand(open_console, {
       label: trans.__('Open Sql Console'),
@@ -83,7 +89,6 @@ export class ConnList extends React.Component<
 
     commands.addCommand(del, {
       label: trans.__('Del Connection'),
-      //iconClass: 'jp-MaterialIcon jp-CopyIcon',
       icon: deleteIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._del_conn
     });
@@ -94,10 +99,17 @@ export class ConnList extends React.Component<
       execute: this._clear_pass
     });
 
+    commands.addCommand(edit, {
+      label: trans.__('Edit Comment'),
+      icon: editIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._editComment
+    });
+
     const menu = new Menu({ commands });
     menu.addItem({ command: open_console });
     menu.addItem({ command: del });
     menu.addItem({ command: clear_pass });
+    menu.addItem({ command: edit });
     return menu;
   }
 
@@ -191,6 +203,24 @@ export class ConnList extends React.Component<
     getSqlModel().clear_pass(this._sel_item.name);
   };
 
+  private _editComment = async () => {
+    const { name, desc } = this._sel_item;
+    const { trans } = this.props;
+    const result = await InputDialog.getText({
+      title: trans.__('Input Comment of: ' + name),
+      text: desc
+    });
+    if (result.value === null || result.value === desc) {
+      return;
+    }
+    const comment: IComment = {
+      type: CommentType.C_CONN,
+      dbid: name,
+      comment: result.value || ''
+    };
+    getSqlModel().add_comment(comment);
+  };
+
   private _open_console = () => {
     const qmodel = new QueryModel({
       dbid: this._sel_item.name,
@@ -215,17 +245,38 @@ export class SchemaList extends React.Component<
     };
   }
 
-  private _createContextMenu(): Menu {
+  private _createContextMenu(): ContextMenu {
     const { trans } = this.props;
     const commands = new CommandRegistry();
+    const copy = 'copyName';
+    const copy_all = 'copyAll';
     const open_console = 'open-console';
+    const edit = 'edit';
     commands.addCommand(open_console, {
       label: trans.__('Open Sql Console'),
       icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._open_console
     });
-    const menu = new Menu({ commands });
-    menu.addItem({ command: open_console });
+    commands.addCommand(copy, {
+      label: trans.__('Copy Table Name'),
+      icon: copyIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._copyToClipboard('n')
+    });
+    commands.addCommand(copy_all, {
+      label: trans.__('Copy Table Name & Comment'),
+      icon: copyIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._copyToClipboard('all')
+    });
+    commands.addCommand(edit, {
+      label: trans.__('Edit Comment'),
+      icon: editIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._editComment
+    });
+    const menu = new ContextMenu({ commands });
+    menu.addItem({ command: open_console, selector: `.${divListStyle}` });
+    menu.addItem({ command: copy, selector: '.is_tbl' });
+    menu.addItem({ command: copy_all, selector: '.is_tbl' });
+    menu.addItem({ command: edit, selector: `.${divListStyle}` });
     return menu;
   }
 
@@ -256,7 +307,11 @@ export class SchemaList extends React.Component<
           onClick={onSelect(p)}
           title={p.name + '\n' + p.desc}
           className={
-            divListStyle + ' ' + (sel_name === p.name ? activeStyle : '')
+            divListStyle +
+            ' ' +
+            (sel_name === p.name ? activeStyle : '') +
+            ' ' +
+            (p.type === 'table' ? 'is_tbl' : '')
           }
           onContextMenu={event => this._handleContextMenu(event, p)}
         >
@@ -327,9 +382,19 @@ export class SchemaList extends React.Component<
     item: IDbItem
   ) => {
     event.preventDefault();
-    //this._sel_item = item;
+    this._sel_item = item;
     this.setState({ sel_name: item.name });
-    this._contextMenu.open(event.clientX, event.clientY);
+    this._contextMenu.open(event.nativeEvent); //event.clientX, event.clientY);
+  };
+
+  private _copyToClipboard = (t: string) => () => {
+    const { name, desc } = this._sel_item;
+    const comment = desc?.trim();
+    if (t === 'all' && comment !== '') {
+      Clipboard.copyToSystem(`${name} /* ${comment} */`);
+    } else {
+      Clipboard.copyToSystem(`${name}`);
+    }
   };
 
   private _open_console = () => {
@@ -340,8 +405,32 @@ export class SchemaList extends React.Component<
     newSqlConsole(qmodel, '', this.props.jp_services as IJpServices);
   };
 
-  private readonly _contextMenu: Menu;
-  //private _sel_item!: IDbItem;
+  private _editComment = async () => {
+    const { dbid } = this.props;
+    const { name, desc } = this._sel_item;
+    const { trans } = this.props;
+    const result = await InputDialog.getText({
+      title: trans.__('Input Comment of: ' + name),
+      text: desc
+    });
+    if (result.value === null || result.value === desc) {
+      return;
+    }
+    const comment: IComment = {
+      type: CommentType.C_SCHEMA,
+      dbid: dbid as string,
+      schema: name,
+      comment: result.value || ''
+    };
+    if (this._sel_item.type === 'table') {
+      (comment.type = CommentType.C_TABLE), (comment.schema = '');
+      comment.table = name;
+    }
+    getSqlModel().add_comment(comment);
+  };
+
+  private readonly _contextMenu: ContextMenu;
+  private _sel_item!: IDbItem;
 }
 
 export class TbList extends React.Component<ListProps, { sel_name?: string }> {
@@ -359,6 +448,7 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
     const copy = 'copyName';
     const copy_all = 'copyAll';
     const open_console = 'open-console';
+    const edit = 'edit';
     commands.addCommand(open_console, {
       label: trans.__('Open Sql Console'),
       icon: queryIcon.bindprops({ stylesheet: 'menuItem' }),
@@ -366,18 +456,24 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
     });
     commands.addCommand(copy, {
       label: trans.__('Copy Table Name'),
-      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      icon: copyIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._copyToClipboard('n')
     });
     commands.addCommand(copy_all, {
       label: trans.__('Copy Table Name & Comment'),
-      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      icon: copyIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._copyToClipboard('all')
+    });
+    commands.addCommand(edit, {
+      label: trans.__('Edit Comment'),
+      icon: editIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._editComment
     });
     const menu = new Menu({ commands });
     menu.addItem({ command: open_console });
     menu.addItem({ command: copy });
     menu.addItem({ command: copy_all });
+    menu.addItem({ command: edit });
     return menu;
   }
 
@@ -496,6 +592,27 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
       conn_readonly: true
     });
     newSqlConsole(qmodel, '', this.props.jp_services as IJpServices);
+  };
+
+  private _editComment = async () => {
+    const { dbid, schema } = this.props;
+    const { name, desc } = this._sel_item;
+    const { trans } = this.props;
+    const result = await InputDialog.getText({
+      title: trans.__('Input Comment of: ' + name),
+      text: desc
+    });
+    if (result.value === null || result.value === desc) {
+      return;
+    }
+    const comment: IComment = {
+      type: CommentType.C_TABLE,
+      dbid: dbid as string,
+      schema,
+      table: name,
+      comment: result.value || ''
+    };
+    getSqlModel().add_comment(comment);
   };
 
   private readonly _contextMenu: Menu;

@@ -10,7 +10,8 @@ import {
   get_query,
   stop_query,
   edit_conn,
-  del_conn
+  del_conn,
+  add_comment
 } from './handler';
 import {
   IDbItem,
@@ -18,7 +19,8 @@ import {
   ITreeCmdRes,
   TApiStatus,
   IQueryRes,
-  IDBConn
+  IDBConn,
+  IComment
 } from './interfaces';
 
 let sqlModelInst: SqlModel;
@@ -207,6 +209,34 @@ export class SqlModel {
     await clear_pass(dbid);
   };
 
+  add_comment = async (data: IComment): void => {
+    const rc = await add_comment(data);
+    if (rc.status === 'OK') {
+      //         const function find_node(cur_list, name) {
+      //             for (let i = 0; i < cur_list.length; i++) {
+      //                 if (cur_list[i].name === name)
+      //                     return cur_list
+      //             }
+      //             return false
+      //         }
+
+      //         let cur_list: IDbItem[] = this._item_list;
+      //         if (data.dbid) cur_list = find_node(cur_list, data.dbid)
+      //         if (cur_list===false) return
+      //         if (data.schema) cur_list = find_node(cur_list, data.schema)
+      //         if (cur_list===false) return
+      //         if (data.table) cur_list = find_node(cur_list, data.table)
+      //         if (cur_list===false) return
+      //         if (data.column) cur_list = find_node(cur_list, data.column)
+      //         if (cur_list===false) return
+
+      //         cur_list.desc =  data.comment
+      this.comment_change.emit();
+    } else {
+      alert(rc.message);
+    }
+  };
+
   get need_passwd(): Signal<SqlModel, IPass> {
     return this._need_passwd;
   }
@@ -223,11 +253,16 @@ export class SqlModel {
     return this._conn_create;
   }
 
+  get comment_change(): Signal<SqlModel, void> {
+    return this._comment_change;
+  }
+
   private _item_list: IDbItem[] = [];
   private _need_passwd = new Signal<SqlModel, IPass>(this);
   private _passwd_settled = new Signal<SqlModel, string>(this);
   private _conn_changed = new Signal<SqlModel, string>(this);
   private _conn_create = new Signal<SqlModel, IDBConn>(this);
+  private _comment_change = new Signal<SqlModel, void>(this);
 }
 
 /**

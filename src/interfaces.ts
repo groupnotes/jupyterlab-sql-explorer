@@ -61,3 +61,19 @@ export interface IQueryRes {
   message?: string;
   pass_info?: IPass; // if status if NEED_PASS,
 }
+
+export enum CommentType {
+  C_CONN = '1',
+  C_SCHEMA = '2',
+  C_TABLE = '3',
+  C_COLUMN = '4'
+}
+
+export interface IComment {
+  type: CommentType;
+  dbid: string;
+  schema?: string;
+  table?: string;
+  column?: string;
+  comment: string;
+}

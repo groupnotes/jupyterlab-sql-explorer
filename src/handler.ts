@@ -1,7 +1,14 @@
 import { URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
-import { ITreeCmdRes, IApiRes, IPass, IQueryRes, IDBConn } from './interfaces';
+import {
+  ITreeCmdRes,
+  IApiRes,
+  IPass,
+  IQueryRes,
+  IDBConn,
+  IComment
+} from './interfaces';
 
 /**
  * Call the API extension
@@ -62,7 +69,7 @@ export async function requestAPI<T>(
   return data;
 }
 
-export async function get<T>(
+export async function GET<T>(
   act: string,
   params: { [key: string]: string },
   options?: RequestInit
@@ -81,9 +88,9 @@ export async function get<T>(
   return rc;
 }
 
-export async function post<T>(
+export async function POST<T>(
   act: string,
-  body: { [key: string]: string },
+  body: any,
   options?: RequestInit
 ): Promise<T> {
   let rc!: T;
@@ -102,7 +109,7 @@ export async function post<T>(
   return rc;
 }
 
-export async function del<T>(
+export async function DELETE<T>(
   act: string,
   params: { [key: string]: string }
 ): Promise<T> {
@@ -125,7 +132,7 @@ export const load_db_tree = async (
   params: { [key: string]: string }
 ): Promise<ITreeCmdRes> => {
   try {
-    return await get(act, params);
+    return await GET(act, params);
   } catch (reason) {
     return { status: 'ERR', data: reason } as ITreeCmdRes;
   }
@@ -160,20 +167,20 @@ export const edit_conn = async (conn: IDBConn): Promise<IApiRes<any>> => {
       value !== undefined ? { ...obj, [key]: value } : obj,
     {}
   );
-  return await post('conns', newObj);
+  return await POST('conns', newObj);
 };
 
 export const del_conn = async (dbid: string): Promise<IApiRes<any>> => {
-  return await del('conns', { dbid });
+  return await DELETE('conns', { dbid });
 };
 
 export const set_pass = async (pass_info: IPass): Promise<IApiRes<any>> => {
   const { db_id, db_user, db_pass } = pass_info;
-  return await post('pass', { db_id, db_user, db_pass });
+  return await POST('pass', { db_id, db_user, db_pass });
 };
 
 export const clear_pass = async (dbid?: string): Promise<IApiRes<any>> => {
-  return await del('pass', { dbid: dbid || '' });
+  return await DELETE('pass', { dbid: dbid || '' });
 };
 
 export const query = async (
@@ -182,16 +189,20 @@ export const query = async (
   schema?: string,
   options?: RequestInit
 ): Promise<IQueryRes> => {
-  return await post('query', { sql, dbid }, options);
+  return await POST('query', { sql, dbid }, options);
 };
 
 export const get_query = async (
   taskid: string,
   options?: RequestInit
 ): Promise<IQueryRes> => {
-  return await get('query', { taskid }, options);
+  return await GET('query', { taskid }, options);
 };
 
 export const stop_query = async (taskid: string): Promise<IQueryRes> => {
-  return await del('query', { taskid });
+  return await DELETE('query', { taskid });
+};
+
+export const add_comment = async (data: IComment): Promise<IApiRes<any>> => {
+  return await POST('comments', data);
 };

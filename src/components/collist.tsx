@@ -1,17 +1,17 @@
 import * as React from 'react';
 import { Menu } from '@lumino/widgets';
 import { CommandRegistry } from '@lumino/commands';
-import { Clipboard } from '@jupyterlab/apputils';
-import { refreshIcon } from '@jupyterlab/ui-components';
+import { Clipboard, InputDialog } from '@jupyterlab/apputils';
+import { refreshIcon, copyIcon, editIcon } from '@jupyterlab/ui-components';
 //import { newQuery } from '../QueryWidget'
 import { newSqlConsole } from '../sqlConsole';
 import { style } from 'typestyle';
-import { IDbItem } from '../interfaces';
+import { IDbItem, CommentType, IComment } from '../interfaces';
 import { queryIcon } from '../icons';
 import { tbStyle, listStyle, hrStyle, activeStyle } from './styles';
 import { ActionBtn } from './ActionBtn';
 import { IJpServices } from '../JpServices';
-import { QueryModel } from '../model';
+import { QueryModel, getSqlModel } from '../model';
 import { Loading } from './loading';
 
 const chkStyle = style({
@@ -61,21 +61,28 @@ export class ColList extends React.Component<TColProps, TColState> {
     const commands = new CommandRegistry();
     const copy = 'copyName';
     const copy_all = 'copyAll';
+    const edit = 'edit';
     const { trans } = this.props.jp_services;
 
     commands.addCommand(copy, {
       label: trans.__('Copy Column Name'),
-      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      icon: copyIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._copyToClipboard('n')
     });
     commands.addCommand(copy_all, {
       label: trans.__('Copy Column Name & Comment'),
-      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      icon: copyIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: this._copyToClipboard('all')
+    });
+    commands.addCommand(edit, {
+      label: trans.__('Edit Comment'),
+      icon: editIcon.bindprops({ stylesheet: 'menuItem' }),
+      execute: this._editComment
     });
     const menu = new Menu({ commands });
     menu.addItem({ command: copy });
     menu.addItem({ command: copy_all });
+    menu.addItem({ command: edit });
     return menu;
   }
 
@@ -174,6 +181,28 @@ export class ColList extends React.Component<TColProps, TColState> {
       checked = new Set<string>(list.map(p => p.name));
     }
     this.setState({ checked, sel_name: '' });
+  };
+
+  private _editComment = async () => {
+    const { dbid, schema, table } = this.props;
+    const { name, desc } = this._sel_item;
+    const { trans } = this.props.jp_services;
+    const result = await InputDialog.getText({
+      title: trans.__('Input Comment of: ' + name),
+      text: desc
+    });
+    if (result.value === null || result.value === desc) {
+      return;
+    }
+    const comment: IComment = {
+      type: CommentType.C_COLUMN,
+      dbid,
+      schema,
+      table,
+      column: name,
+      comment: result.value || ''
+    };
+    getSqlModel().add_comment(comment);
   };
 
   private _onSelect =

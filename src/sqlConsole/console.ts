@@ -22,6 +22,7 @@ import { SplitPanel } from '@lumino/widgets';
 import { toArray } from '@lumino/algorithm';
 
 import { Signal } from '@lumino/signaling';
+import { saveIcon, runIcon, stopIcon } from '@jupyterlab/ui-components';
 
 import { IJpServices } from '../JpServices';
 import { sqlIcon as queryIcon, sqlScIcon } from '../icons';
@@ -235,7 +236,7 @@ export function setup_sql_console(
       {
         name: 'save',
         widget: new ToolbarButton({
-          iconClass: 'jp-SaveIcon jp-Icon jp-Icon-16',
+          icon: saveIcon,
           onClick: () => sqlConsole.save(),
           tooltip: trans.__('save')
         })
@@ -243,7 +244,7 @@ export function setup_sql_console(
       {
         name: 'run',
         widget: new ToolbarButton({
-          iconClass: 'jp-RunIcon jp-Icon jp-Icon-16',
+          icon: runIcon,
           onClick: () => sqlConsole.run(),
           tooltip: trans.__('Run Query')
         })
@@ -251,7 +252,7 @@ export function setup_sql_console(
       {
         name: 'stop',
         widget: new ToolbarButton({
-          iconClass: 'jp-StopIcon jp-Icon jp-Icon-16',
+          icon: stopIcon,
           onClick: () => sqlConsole.stop(),
           tooltip: trans.__('Stop Query')
         })

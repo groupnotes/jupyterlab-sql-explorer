@@ -1,6 +1,9 @@
 from ._version import __version__
 from .handlers import setup_handlers
 from . import db
+from . import comments
+
+comments.init()
 
 def _jupyter_labextension_paths():
     return [{

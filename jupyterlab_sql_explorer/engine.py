@@ -7,7 +7,9 @@ import gettext
 from urllib.parse import quote_plus
 _ = gettext.gettext
 
-DB_ROOT='~/work/.database/'
+from .const import DB_ROOT
+from . import comments
+
 DB_CFG=DB_ROOT+'db_conf.json'
 
 DB_MYSQL = '1'
@@ -44,7 +46,7 @@ def getDBlist()->list:
     for dbid, e in _getCfgEntryList().items():
         lst.append({'name': dbid, 'desc': e['name'], 'type': 'conn', 'subtype': int(e['db_type'])})
 
-    return lst
+    return comments.match_conn(lst)
 
 def _getCfgEntryList(passfile=DB_CFG)->list:
     passfile= os.path.expanduser(passfile)

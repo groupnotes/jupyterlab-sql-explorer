@@ -11,7 +11,7 @@ async def test_conn(jp_fetch):
     old = json.loads(response.body)
 
     response = await jp_fetch("jupyterlab-sql-explorer", "conns",
-        method='POST', body=json.dumps({"db_id": "add", "db_name":"/tmp/test.db", "db_type":'6'}))
+        method='POST', body=json.dumps({"db_id": "add", "db_name":"/tmp/unit_test.db", "db_type":'6'}))
     assert response.code == 200
     payload = json.loads(response.body)
     assert payload == {

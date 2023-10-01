@@ -3,7 +3,7 @@ import traceback
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
-from . import engine, db
+from . import engine, db, comments
 from . import task
 
 class ConnHandler(APIHandler):
@@ -56,7 +56,7 @@ class DbTableHandler(APIHandler):
             if not st:
                 self.finish(json.dumps({'error': 'NEED-PASS', 'pass_info': {'db_id': dbid, 'db_user': db_user}}))
             else:
-                data=db.get_db_or_table(dbid, database)
+                data=db.get_schema_or_table(dbid, database)
                 self.finish(json.dumps({'data': data}))
         except Exception as err:
             self.log.error(err)
@@ -157,6 +157,32 @@ class QueryHandler(APIHandler):
             self.log.error(err)
             self.finish(json.dumps({'error': str(err)}))
 
+class CommentsHandler(APIHandler):
+    '''
+    handler comments
+    '''
+    @tornado.web.authenticated
+    def post(self):
+        try:
+            data = self.get_json_body()
+            msg=comments.add(data)
+            self.finish(json.dumps({'data': msg}))
+        except Exception as err:
+            self.log.error(err)
+            traceback.print_exc()
+            self.finish(json.dumps({'error': str(err)}))
+
+    @tornado.web.authenticated
+    def delete(self):
+        try:
+            data = self.get_json_body()
+            comments.delete(data)
+            self.finish(json.dumps({'data': 'set comments ok'}))
+        except Exception as err:
+            self.log.error(err)
+            traceback.print_exc()
+            self.finish(json.dumps({'error': str(err)}))
+
 def handler_url(base_url, act):
     return url_path_join(base_url, "jupyterlab-sql-explorer", act)
 
@@ -170,5 +196,6 @@ def setup_handlers(web_app):
         (handler_url(base_url, "columns"), TabColumnHandler),
         (handler_url(base_url, "pass"), PasswdHandler),
         (handler_url(base_url, "query"), QueryHandler),
+        (handler_url(base_url, "comments"), CommentsHandler),
     ]
     web_app.add_handlers(host_pattern, handlers)

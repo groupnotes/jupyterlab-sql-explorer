@@ -111,6 +111,10 @@ export class SqlPanel extends React.Component<ISqlPanelProps, ISqlPanelState> {
       this.forceUpdate();
     }, this);
 
+    this.props.model.comment_change.connect(() => {
+      this._refresh();
+    }, this);
+
     const { path } = this.state;
     const rc = await this.props.model.load_path(path);
     if (!rc) {

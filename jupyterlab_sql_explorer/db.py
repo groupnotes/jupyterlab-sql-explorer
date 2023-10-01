@@ -1,5 +1,6 @@
 import sqlparse
 from . import engine
+from . import comments
 from .serializer import make_row_serializable
 
 log=None
@@ -40,15 +41,22 @@ def set_limit(sql: str, def_lim: int = 200, max_lim: int = 10000) -> (bool, str)
 
     out=''
     has_limit=False
+    after_limit=False
     for token in stmt:
         if has_limit is False:
             if token.ttype == sqlparse.tokens.Keyword and token.value.upper() == "LIMIT":
                 has_limit = True  # limit found
             else:
                 out += str(token)
+        elif after_limit:
+            out += str(token)
         else:
             if token.ttype == sqlparse.tokens.Literal.Number.Integer:
                 limit_value = int(token.value)
+                after_limit = True
+            elif token.ttype != sqlparse.tokens.Whitespace:
+                raise Exception("Sql Error")
+
     use_lim = def_lim
     if has_limit:
         if limit_value<=max_lim:
@@ -81,7 +89,6 @@ def query_exec(dbid, sql, **kwargs) ->dict:
 def get_column_info(dbid, db, tbl):
     '''
     '''
-    print(dbid, db, tbl)
     dbinfo = engine._getDbInfo(dbid)
     if dbinfo is None:
         return
@@ -125,11 +132,12 @@ def get_column_info(dbid, db, tbl):
                 else:
                     cols[r['col_name']]={'name': r['col_name'], 'desc': r['comment'], 'type': 'col', 'stype': 'parkey'}
             columns=list(cols.values())
+    columns = comments.match_column(dbid, db, tbl, columns)
     return columns
 
-def get_db_or_table(dbid, database):
+def get_schema_or_table(dbid, schema):
     '''
-    Obtain the database or table (if there is no database layer) of a specified database 
+    Obtain the schema or table (if there is no scheam layer) of a specified database
     connection
     '''
     dbinfo = engine._getDbInfo(dbid)
@@ -148,13 +156,15 @@ def get_db_or_table(dbid, database):
             FROM sqlite_master where type='table' or type='view'
         '''):
             tables.append({'name': r[0], 'desc': '', 'type': 'table', 'subtype': r[1]})
+        tables = comments.match_table(dbid, '', tables)
         return tables
     elif dbinfo['db_type'] ==engine.DB_PGSQL:
-        if database is None:
-            databases=[]
+        if schema is None:
+            schemas=[]
             for r in query(dbid, "select schema_name from information_schema.schemata where schema_name='public' or schema_owner!='gpadmin'"):
-                databases.append({'name': r[0], 'desc': '', 'type': 'db'})
-            return databases
+                schemas.append({'name': r[0], 'desc': '', 'type': 'db'})
+            schemas = comments.match_schema(dbid, schemas)
+            return schemas
         else:
             tables=[]
             for r in query(dbid, '''
@@ -167,16 +177,18 @@ def get_db_or_table(dbid, database):
                 obj_description((t.table_schema || '.' || t.table_name)::regclass, 'pg_class') as comment
             FROM information_schema.tables t
             WHERE t.table_schema='%s'
-            ''' % database):
+            ''' % schema):
                 tables.append({'name': r[0], 'desc': r[2], 'type': 'table', 'subtype': r[1]})
+            tables = comments.match_table(dbid, schema, tables)
             return tables
 
     elif dbinfo['db_type'] ==engine.DB_MYSQL:
-        if database is None:
-            databases=[]
+        if schema is None:
+            schemas=[]
             for r in query(dbid, "show databases"):
-                databases.append({'name': r[0], 'desc': '', 'type': 'db'})
-            return databases
+                schemas.append({'name': r[0], 'desc': '', 'type': 'db'})
+            schemas = comments.match_schema(dbid, schemas)
+            return schemas
         else:
             tables=[]
             for r in query(dbid, '''
@@ -189,19 +201,22 @@ def get_db_or_table(dbid, database):
                     END
                 FROM information_schema.tables
                 WHERE table_schema = '%s'
-            ''' % database):
+            ''' % schema):
                 tables.append({'name': r[0], 'desc': r[1], 'type': 'table', 'subtype': r[2]})
+            tables = comments.match_table(dbid, schema, tables)
             return tables
 
     else:
-        if database is None:
-            databases=[]
+        if schema is None:
+            schemas=[]
             for r in query(dbid, "show databases"):
-                databases.append({'name': r[0], 'desc': '', 'type': 'db'})
-            return databases
+                schemas.append({'name': r[0], 'desc': '', 'type': 'db'})
+            schemas = comments.match_schema(dbid, schemas)
+            return schemas
         else:
             tables=[]
-            for r in query(dbid, "show tables", db=database):
+            for r in query(dbid, "show tables", db=schema):
                 tables.append({'name': r[0], 'desc': '', 'type': 'table'})
+            tables = comments.match_schema(dbid, schema, tables)
             return tables
 

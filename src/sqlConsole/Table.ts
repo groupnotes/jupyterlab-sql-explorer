@@ -5,7 +5,7 @@ import {
   TranslationBundle
 } from '@jupyterlab/translation';
 import { CommandRegistry } from '@lumino/commands';
-
+import { copyIcon } from '@jupyterlab/ui-components';
 import { Menu } from '@lumino/widgets';
 
 import {
@@ -56,7 +56,7 @@ export class Table implements IDisposable {
     const commands = new CommandRegistry();
     commands.addCommand(CommandIds.copyToClipboard, {
       label: trans.__('Copy Selection'),
-      iconClass: 'jp-MaterialIcon jp-CopyIcon',
+      icon: copyIcon.bindprops({ stylesheet: 'menuItem' }),
       execute: () => this._copySelectionToClipboard()
     });
     const menu = new Menu({ commands });
