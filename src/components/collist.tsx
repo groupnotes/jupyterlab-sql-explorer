@@ -80,9 +80,9 @@ export class ColList extends React.Component<TColProps, TColState> {
       execute: this._editComment
     });
     const menu = new Menu({ commands });
+    menu.addItem({ command: edit });
     menu.addItem({ command: copy });
     menu.addItem({ command: copy_all });
-    menu.addItem({ command: edit });
     return menu;
   }
 
@@ -235,9 +235,9 @@ export class ColList extends React.Component<TColProps, TColState> {
       checked.forEach(c => {
         const comment = col_names[c].trim();
         if (comment) {
-          cols.push(`    t.${c} /* ${comment} */`);
+          cols.push(`    t.\`${c}\` /* ${comment} */`);
         } else {
-          cols.push(`    t.${c}`);
+          cols.push(`    t.\`${c}\``);
         }
       });
       sql += '\n' + cols.join(',\n');

@@ -39,6 +39,7 @@ def test_comments_db():
 
 @patch("jupyterlab_sql_explorer.comments_db.get_column_comments")
 def test_comments(mock_get_column_comments):
+    comments.init("database::sqlite:///:memory:")
     mock_get_column_comments.return_value={'c1': 'comment c1', 'c2': 'comment c2'}
     columns=[
         {'name': 'c1'},
@@ -53,6 +54,7 @@ def test_comments(mock_get_column_comments):
 
 @patch("jupyterlab_sql_explorer.comments_db.get_conn_comments")
 def test_comments_1(mock_get_conn_comments):
+    comments.init("database::sqlite:///:memory:")
     mock_get_conn_comments.return_value={'con1': 'comment con1'}
     conns=[
         {'name': 'con1'},
@@ -65,6 +67,7 @@ def test_comments_1(mock_get_conn_comments):
 
 @patch("jupyterlab_sql_explorer.comments_db.get_schema_comments")
 def test_comments_2(mock_get_schema_comments):
+    comments.init("database::sqlite:///:memory:")
     mock_get_schema_comments.return_value={'s1': 'comment s1'}
     schemas=[
         {'name': 's1'},
@@ -77,6 +80,7 @@ def test_comments_2(mock_get_schema_comments):
 
 @patch("jupyterlab_sql_explorer.comments_db.get_table_comments")
 def test_comments_3(mock_get_table_comments):
+    comments.init("database::sqlite:///:memory:")
     mock_get_table_comments.return_value={'t1': 'comment t1'}
     tables=[
         {'name': 't1'},

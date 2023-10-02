@@ -5,13 +5,17 @@ from .const import DB_ROOT
 #
 # comments_store : None / database / server
 #
-comments_store = 'database'
+comments_store = None
 
-def init():
+def init(store_str):
     global comments_store
-    comments_store = 'database'
-    comments_file_path = os.path.expanduser(DB_ROOT+ 'comments.db')
-    comments_db.init("sqlite:///"+comments_file_path)
+    print(store_str)
+    arr=store_str.split("::")
+    if arr[0]=='database':
+        comments_db.init(arr[1])
+        comments_store=arr[0]
+    else:
+        comments_store=None
 
 def add(data):
     if comments_store is None:

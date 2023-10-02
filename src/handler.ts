@@ -7,7 +7,8 @@ import {
   IPass,
   IQueryRes,
   IDBConn,
-  IComment
+  IComment,
+  IParam
 } from './interfaces';
 
 /**
@@ -90,7 +91,7 @@ export async function GET<T>(
 
 export async function POST<T>(
   act: string,
-  body: any,
+  body: IParam,
   options?: RequestInit
 ): Promise<T> {
   let rc!: T;
@@ -204,5 +205,5 @@ export const stop_query = async (taskid: string): Promise<IQueryRes> => {
 };
 
 export const add_comment = async (data: IComment): Promise<IApiRes<any>> => {
-  return await POST('comments', data);
+  return await POST('comments', data as any as IParam);
 };

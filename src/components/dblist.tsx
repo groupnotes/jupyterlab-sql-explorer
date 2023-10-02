@@ -273,10 +273,10 @@ export class SchemaList extends React.Component<
       execute: this._editComment
     });
     const menu = new ContextMenu({ commands });
-    menu.addItem({ command: open_console, selector: `.${divListStyle}` });
-    menu.addItem({ command: copy, selector: '.is_tbl' });
-    menu.addItem({ command: copy_all, selector: '.is_tbl' });
-    menu.addItem({ command: edit, selector: `.${divListStyle}` });
+    menu.addItem({ command: copy, selector: '[data-ptype="table"]', rank:50 });
+    menu.addItem({ command: copy_all, selector: '[data-ptype="table"]',rank: 50});
+    menu.addItem({ command: open_console, selector: '*[data-ptype]', rank:100 });
+    menu.addItem({ command: edit, selector: '*[data-ptype]', rank: 100});
     return menu;
   }
 
@@ -306,13 +306,8 @@ export class SchemaList extends React.Component<
           style={style}
           onClick={onSelect(p)}
           title={p.name + '\n' + p.desc}
-          className={
-            divListStyle +
-            ' ' +
-            (sel_name === p.name ? activeStyle : '') +
-            ' ' +
-            (p.type === 'table' ? 'is_tbl' : '')
-          }
+          className={ divListStyle + (sel_name === p.name ? (' '+activeStyle) : '')}
+          data-ptype={p.type}
           onContextMenu={event => this._handleContextMenu(event, p)}
         >
           {p.type === 'db' && (
@@ -471,9 +466,9 @@ export class TbList extends React.Component<ListProps, { sel_name?: string }> {
     });
     const menu = new Menu({ commands });
     menu.addItem({ command: open_console });
+    menu.addItem({ command: edit });
     menu.addItem({ command: copy });
     menu.addItem({ command: copy_all });
-    menu.addItem({ command: edit });
     return menu;
   }
 
