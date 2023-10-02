@@ -143,8 +143,8 @@ function activate(
   if (themeManager) {
     themeManager.themeChanged.connect(updateThemes);
   }
-      
-  console.log('JupyterLab extension jupyterlab-sql-explorer is activated!')
+
+  console.log('JupyterLab extension jupyterlab-sql-explorer is activated!');
 }
 
 export default plugin;
