@@ -273,10 +273,18 @@ export class SchemaList extends React.Component<
       execute: this._editComment
     });
     const menu = new ContextMenu({ commands });
-    menu.addItem({ command: copy, selector: '[data-ptype="table"]', rank:50 });
-    menu.addItem({ command: copy_all, selector: '[data-ptype="table"]',rank: 50});
-    menu.addItem({ command: open_console, selector: '*[data-ptype]', rank:100 });
-    menu.addItem({ command: edit, selector: '*[data-ptype]', rank: 100});
+    menu.addItem({ command: copy, selector: '[data-ptype="table"]', rank: 50 });
+    menu.addItem({
+      command: copy_all,
+      selector: '[data-ptype="table"]',
+      rank: 50
+    });
+    menu.addItem({
+      command: open_console,
+      selector: '*[data-ptype]',
+      rank: 100
+    });
+    menu.addItem({ command: edit, selector: '*[data-ptype]', rank: 100 });
     return menu;
   }
 
@@ -306,7 +314,9 @@ export class SchemaList extends React.Component<
           style={style}
           onClick={onSelect(p)}
           title={p.name + '\n' + p.desc}
-          className={ divListStyle + (sel_name === p.name ? (' '+activeStyle) : '')}
+          className={
+            divListStyle + (sel_name === p.name ? ' ' + activeStyle : '')
+          }
           data-ptype={p.type}
           onContextMenu={event => this._handleContextMenu(event, p)}
         >

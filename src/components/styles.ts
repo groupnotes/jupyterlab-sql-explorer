@@ -48,11 +48,11 @@ export const listStyle = style({
     '&>li>.memo': {
       marginRight: 5
     },
-      
+
     [`&>li:not(.${activeStyle})>.memo`]: {
       color: '#888'
-    },  
-      
+    },
+
     '&>li>input': {
       verticalAlign: 'middle'
     },
@@ -98,7 +98,7 @@ export const divListStyle = style({
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     },
-      
+
     [`&:not(.${activeStyle})>.memo`]: {
       color: '#888'
     },

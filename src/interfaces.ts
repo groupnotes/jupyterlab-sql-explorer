@@ -36,7 +36,9 @@ export interface IPass {
 
 export type TApiStatus = 'OK' | 'NEED-PASS' | 'RETRY' | 'ERR';
 
-export interface IParam { [key: string]: string | number | null };
+export interface IParam {
+  [key: string]: string | number | null;
+}
 
 export interface IApiRes<T> {
   status: TApiStatus;
