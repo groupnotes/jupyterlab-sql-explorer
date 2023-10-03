@@ -1,15 +1,48 @@
+[![Github Actions Status](https://github.com/groupnotes/jupyterlab-sql-explorer/actions/workflows/build.yml/badge.svg)](https://github.com/groupnotes/jupyterlab-sql-explorer/actions/workflows/build.yml)
+
 # jupyterlab-sql-explorer
 
-[![Github Actions Status](https://github.com/groupnotes/jupyterlab-sql-explorer/workflows/Build/badge.svg)](https://github.com/groupnotes/jupyterlab-sql-explorer/actions/workflows/build.yml)
-A sql plugin for jupyterlab.
+jupyterlab-sql-explorer is an extensible JupyterLab plugin that enables users to run SQL statements and navigate database objects within JupyterLab. Here are its main features:
 
-This extension is composed of a Python package named `jupyterlab_sql_explorer`
-for the server extension and a NPM package named `jupyterlab-sql-explorer`
-for the frontend extension.
+- Browse and navigate data objects such as tables and views using a tree structure. This capability is particularly useful for data analysts who need to understand the underlying data organization.
+
+- Run SQL statements directly in JupyterLab and view the returned results.
+
+- Support for multiple databases, including MySQL, PostgreSQL, Hive, SQLite, ORACLE, and more.
+
+- Edit annotations for data objects and support for both local and shared modes. With jupyterlab-sql-explorer, users can add annotations to data objects such as tables and views. This feature is especially valuable for data analysts working in teams, as it facilitates collaboration and knowledge sharing around specific data assets.
+
+![screenshot](https://raw.githubusercontent.com/groupnotes/jupyterlab-sql-explorer/main/screenshot.png)
+
+## Annotations Manage
+
+### Edit Comments:
+
+To edit the comments on data objects, you can right-click on the corresponding connection, table, or column in the database navigation tree and select the "Edit Comment" option. This will open an editing box that allows you to add or modify the comment content.
+
+### Share Comments:
+
+By default, comments are saved locally. If you need to share comments within a team, you must follow these steps:
+
+In $HOME/.jupyter/jupyter_notebook_config.py (on Windows %USERPROFILE%/.jupyter/jupyter_notebook_config.py), add or modify the following line:
+
+```python
+c.JupyterLabSqlExplorer.comments_store = 'database::your_database_connection_string'
+```
+
+Replace 'your_database_connection_string' with the database connection string you have configured. For example, if you are using a MySQL database, the connection string may look like this:
+
+```python
+c.JupyterLabSqlExplorer.comments_store = 'database::mysql+pymysql://root:12345@192.168.1.100:3306/data'
+```
+
+This will store the comments in a MySQL database. You can choose to use other types of databases as needed.
+
+Ensure that each team member follows the steps mentioned above to modify the configuration and restart. This will enable the sharing of comments among team members.
 
 ## Requirements
 
-- JupyterLab >= 3.0
+- JupyterLab >= 3.2
 - sqlalchemy >1.4 <2.0
 
 ## Install
@@ -18,6 +51,12 @@ To install the extension, execute:
 
 ```bash
 pip install jupyterlab-sql-explorer
+```
+
+or install with special database driver,
+
+```bash
+pip install jupyterlab-sql-explorer[hive]
 ```
 
 ## Uninstall

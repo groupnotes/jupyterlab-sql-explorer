@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Index, func, text, select
+from sqlalchemy import create_engine, Column, Integer, String, Index, text, Sequence
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -11,10 +11,12 @@ _conn_str=None
 
 Base = declarative_base()
 
+comments_sequence = Sequence('comments_sequence')
+
 class Comments(Base):
     __tablename__ = 'comments'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, comments_sequence, primary_key=True)
     type = Column(Integer)
     dbid = Column(String(20))
     schema = Column(String(100))
@@ -22,7 +24,7 @@ class Comments(Base):
     column = Column(String(100))
     comment = Column(String(500))
 
-    # __table_args__ = Index('type', 'dbid', 'schema', 'column')
+    index_name = Index('idx', type, dbid, schema, column)
 
 def init(conn_str: str):
     global _conn_str
