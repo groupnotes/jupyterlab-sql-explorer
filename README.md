@@ -14,7 +14,7 @@ jupyterlab-sql-explorer is an extensible JupyterLab plugin that enables users to
 
 ![screenshot](https://raw.githubusercontent.com/groupnotes/jupyterlab-sql-explorer/main/preview.gif)
 
-## Usage 
+## Usage
 
 ### Add Database Connction
 
