@@ -12,13 +12,17 @@ jupyterlab-sql-explorer is an extensible JupyterLab plugin that enables users to
 
 - Edit annotations for data objects and support for both local and shared modes. With jupyterlab-sql-explorer, users can add annotations to data objects such as tables and views. This feature is especially valuable for data analysts working in teams, as it facilitates collaboration and knowledge sharing around specific data assets.
 
-![screenshot](https://raw.githubusercontent.com/groupnotes/jupyterlab-sql-explorer/main/screenshot.png)
+![screenshot](https://raw.githubusercontent.com/groupnotes/jupyterlab-sql-explorer/main/preview.gif)
 
-## Annotations Manage
+## Usage 
+
+### Add Database Connction
+
+When using for the first time, open the dialog box to add a data connection by selecting "Database->New Connection" from the menu.
 
 ### Edit Comments:
 
-To edit the comments on data objects, you can right-click on the corresponding connection, table, or column in the database navigation tree and select the "Edit Comment" option. This will open an editing box that allows you to add or modify the comment content.
+To edit the comments of data objects, you can right-click on the corresponding connection, table, or column in the database navigation tree and select the "Edit Comment" option. This will open an editing box that allows you to add or modify the comment content.
 
 ### Share Comments:
 
