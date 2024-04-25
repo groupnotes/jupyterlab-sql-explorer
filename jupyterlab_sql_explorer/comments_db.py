@@ -20,11 +20,11 @@ class Comments(Base):
     type = Column(Integer)
     dbid = Column(String(20))
     schema = Column(String(100))
-    table = Column(String(100))
-    column = Column(String(100))
-    comment = Column(String(500))
+    tabname = Column(String(100))
+    colname = Column(String(100))
+    memo = Column(String(500))
 
-    index_name = Index('idx', type, dbid, schema, column)
+    index_name = Index('idx', type, dbid, schema, tabname, colname)
 
 def init(conn_str: str):
     global _conn_str
@@ -36,10 +36,10 @@ def get_conn_comments():
     try:
         engine = create_engine(_conn_str)
         result = engine.execute(text('''
-        SELECT `dbid`, `comment` FROM comments 
+        SELECT dbid, memo FROM comments 
         WHERE id in ( SELECT max(id) as id FROM comments
-                    WHERE `type` = :type
-                    GROUP BY `dbid` )
+                    WHERE type = :type
+                    GROUP BY dbid )
         '''), type=str(C_CONN))
         data={}
         for r in result.fetchall():
@@ -52,10 +52,10 @@ def get_schema_comments(dbid: str):
     try:
         engine = create_engine(_conn_str)
         result = engine.execute(text('''
-        SELECT `schema`, `comment` FROM comments
+        SELECT schema, memo FROM comments
         WHERE id in ( SELECT max(id) as id FROM comments
-                    WHERE `type` = :type and `dbid` = :dbid
-                    GROUP BY `schema` )
+                    WHERE type = :type and dbid = :dbid
+                    GROUP BY schema )
         '''), type=str(C_SCHEMA), dbid=dbid)
         data={}
         for r in result.fetchall():
@@ -68,10 +68,10 @@ def get_table_comments(dbid: str, schema: str):
     try:
         engine = create_engine(_conn_str)
         result = engine.execute(text('''
-        SELECT `table`, `comment` FROM comments 
+        SELECT tabname, memo FROM comments
         WHERE id in ( SELECT max(id) as id FROM comments
-                    WHERE `type` = :type and `dbid` = :dbid and `schema` = :schema 
-                    GROUP BY `table` )
+                    WHERE type = :type and dbid = :dbid and schema = :schema
+                    GROUP BY tabname )
         '''), type=str(C_TABLE), dbid=dbid, schema=schema)
         data={}
         for r in result.fetchall():
@@ -84,10 +84,10 @@ def get_column_comments(dbid: str, schema: str, table: str):
     try:
         engine = create_engine(_conn_str)
         result = engine.execute(text('''
-        SELECT `column`, `comment` FROM comments 
+        SELECT colname, memo FROM comments
         WHERE id in ( SELECT max(id) as id FROM comments
-                    WHERE `type` = :type and `dbid` = :dbid and `schema` = :schema and `table` = :table
-                    GROUP BY `column` )
+                    WHERE type = :type and dbid = :dbid and schema = :schema and tabname = :table
+                    GROUP BY colname )
         '''), type=str(C_COLUMN), dbid=dbid, schema=schema, table=table)
         data={}
         for r in result.fetchall():
@@ -100,7 +100,7 @@ def set_comments(**args):
 
     param={
         'type': args['type'],
-        'comment': args['comment'],
+        'memo': args['comment'],
         'dbid': args['dbid']
     }
 
@@ -111,9 +111,9 @@ def set_comments(**args):
     elif type==C_SCHEMA:
         param.update({'schema': args['schema']})
     elif type==C_TABLE:
-        param.update({'schema': args['schema'], 'table': args['table']})
+        param.update({'schema': args['schema'], 'tabname': args['table']})
     elif type==C_COLUMN:
-        param.update({'schema': args['schema'], 'table': args['table'], 'column': args['column']})
+        param.update({'schema': args['schema'], 'tabname': args['table'], 'colname': args['column']})
     else:
         raise Exception('arg error')
 
