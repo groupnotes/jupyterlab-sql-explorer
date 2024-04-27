@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.2.6
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: ''
+author_name: groupnotes
+has_binder: false
+has_settings: true
+kind: server
+labextension_name: jupyterlab-sql-explorer
+project_short_description: A JupyterLab extension for Database
+python_name: jupyterlab_sql_explorer
+repository: https://github.com/groupnotes/jupyterlab-sql-explorer.git
+test: true
+
