@@ -33,7 +33,7 @@ export async function requestAPI<T>(
   let response: Response;
   try {
     response = await ServerConnection.makeRequest(requestUrl, init, settings);
-  } catch (error) {
+  } catch (error: any) {
     // when user about, return { error }
     // FIXME: Because the ServerConnection does not handle AbortError, we have to use a hack to deal with user abort
     if (error.message === 'The user aborted a request.') {

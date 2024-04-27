@@ -22,7 +22,7 @@ export class Editor implements IEditor, IDisposable {
   constructor(model: CodeEditor.IModel, editorFactory: IEditorFactoryService) {
     this._model = model;
     this._widget = new EditorWidget(model, editorFactory);
-    this._model.value.changed.connect(() => {
+    this._model.sharedModel.changed.connect(() => {
       this._valueChanged.emit(this.value);
     }, this);
     this._model.mimeType = 'text/x-sql';
@@ -57,11 +57,11 @@ export class Editor implements IEditor, IDisposable {
     } else {
       lines.unshift(newline + '\n');
     }
-    this.widget.model.value.text = lines.join('\n');
+    this.widget.model.sharedModel.setSource(lines.join('\n'));
   }
 
   get value(): string {
-    return this._model.value.text;
+    return this._model.sharedModel.getSource();
   }
 
   get sql(): string {
@@ -71,7 +71,7 @@ export class Editor implements IEditor, IDisposable {
     const selection = editor.getSelection();
     const start: number = editor.getOffsetAt(selection.start);
     const end: number = editor.getOffsetAt(selection.end);
-    let text = this._model.value.text;
+    let text = this._model.sharedModel.getSource();
     if (start !== end) {
       if (start > end) {
         text = text.slice(end, start);
@@ -139,12 +139,12 @@ export class EditorWidget extends CodeEditorWrapper {
       model,
       factory: editorFactory.newInlineEditor
     });
-    this.editor.addKeydownHandler(this._onKeydown);
+    //this.editor.addKeydownHandler(this._onKeydown);
     this.addClass('jp-sql-explorer-ed');
   }
 
   dispose = (): void => {
-    this.editor.addKeydownHandler(this._onKeydown);
+    //this.editor.addKeydownHandler(this._onKeydown);
     //this.editor.removeKeydownHandler(this._onKeydown)
     super.dispose();
   };

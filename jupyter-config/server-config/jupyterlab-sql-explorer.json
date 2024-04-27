@@ -1,7 +1,7 @@
 {
   "ServerApp": {
     "jpserver_extensions": {
-      "jupyterlab_sql_explorer": true
+      "jupyterlab-sql-explorer": true
     }
   }
 }

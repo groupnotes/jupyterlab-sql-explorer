@@ -27,7 +27,7 @@ export class SqlWidget extends ReactWidget {
     jp_services: IJpServices,
     options?: Widget.IOptions
   ) {
-    super(options);
+    super();
     this._model = model;
     this._jp_services = jp_services;
     this.node.id = 'SqlSession-root';

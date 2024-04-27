@@ -21,7 +21,7 @@ export class AutoSizer extends Component<Props, State> {
   //_detectElementResize: DetectElementResize | null = null;
   _parentNode: HTMLElement | null = null;
   _resizeObserver: ResizeObserver | null = null;
-  _timeoutId: number | null = null;
+  _timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   componentDidMount(): void {
     //const { nonce } = this.props;

@@ -103,7 +103,7 @@ export class SqlConsoleWidget extends SplitPanel {
     }
 
     if (this._context2) {
-      this._context2.model.value.text = this.editor.value;
+      this._context2.model.sharedModel.setSource(this.editor.value);
       await this._context2.save();
       return;
     }
@@ -127,7 +127,8 @@ export class SqlConsoleWidget extends SplitPanel {
         path: fp
       });
       await context.initialize(true);
-      context.model.value.text = this.editor.value;
+      // for 3.6.x context.model.value.text = this.editor.value;
+      context.model.sharedModel.setSource(this.editor.value);
       await context.save();
 
       this._context2 = context;
@@ -314,7 +315,9 @@ export function newSqlConsole(
     }
   } else {
     const sql = `-- conn: ${qmodel.dbid}\n\n${init_sql}\n`;
-    const model = new CodeEditor.Model({ value: sql });
+    // for 3.6.x const model = new CodeEditor.Model({ value: sql });
+    const model = new CodeEditor.Model();
+    model.sharedModel.setSource(sql);
     const content = new SqlConsoleWidget(qmodel, undefined, model, jp_services);
     content.theme = get_theme(themeManager);
     widget = new MainAreaWidget({ content });

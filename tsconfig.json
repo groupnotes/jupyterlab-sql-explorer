@@ -16,10 +16,10 @@
     "outDir": "lib",
     "rootDir": "src",
     "strict": true,
+    "skipLibCheck": true,
     "strictNullChecks": true,
-    "target": "ES2018",
-    "lib": ["DOM", "ESnext"],
-    "types": ["jest"]
+    "target": "ES2018"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/__tests__/*"]
 }
