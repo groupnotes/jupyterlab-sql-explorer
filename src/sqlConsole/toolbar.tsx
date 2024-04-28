@@ -191,7 +191,7 @@ class RunStatusComponent extends React.Component<
     showErrorMessage(trans.__('ERROR'), errmsg);
   };
 
-  private _timer_id!: ReturnType<typeof setTimeout>| null;
+  private _timer_id!: ReturnType<typeof setTimeout> | null;
 }
 
 export class RunStatus extends ReactWidget {
