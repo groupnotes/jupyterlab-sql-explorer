@@ -23,6 +23,14 @@ module.exports = {
     '!src/**/.ipynb_checkpoints/*'
   ],
   coverageReporters: ['lcov', 'text'],
+  modulePathIgnorePatterns: [
+    '<rootDir>/build',
+    '<rootDir>/jupyterlab_sql_explorer',
+    '<rootDir>/jupyter-config',
+    '<rootDir>/ui-tests',
+    '<rootDir>/_temp_extension'
+  ],
+  reporters: ['default', 'github-actions'],
   testRegex: 'src/.*/.*.spec.ts[x]?$',
-  transformIgnorePatterns: [`/node_modules/(?!${esModules}).+`]
+  transformIgnorePatterns: [`/node_modules/(?!${esModules}).+`],
 };
