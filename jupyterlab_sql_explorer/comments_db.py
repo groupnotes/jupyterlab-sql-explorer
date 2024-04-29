@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Index, text, Sequence
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base
+#from sqlalchemy.ext.declarative import declarative_base
 
 C_CONN = 1
 C_SCHEMA = 2
@@ -35,47 +35,51 @@ def init(conn_str: str):
 def get_conn_comments():
     try:
         engine = create_engine(_conn_str)
-        result = engine.execute(text('''
-        SELECT dbid, memo FROM comments 
-        WHERE id in ( SELECT max(id) as id FROM comments
+        with engine.connect() as conn:
+            result = conn.execute(text('''
+            SELECT dbid, memo FROM comments 
+            WHERE id in ( SELECT max(id) as id FROM comments
                     WHERE type = :type
                     GROUP BY dbid )
-        '''), type=str(C_CONN))
-        data={}
-        for r in result.fetchall():
-            data[r[0]]=r[1]
-        return data
+            '''), {"type":str(C_CONN)})
+            data={}
+            for r in result.fetchall():
+                data[r[0]]=r[1]
+            return data
     except Exception:
         return {}
 
 def get_schema_comments(dbid: str):
     try:
         engine = create_engine(_conn_str)
-        result = engine.execute(text('''
-        SELECT schema, memo FROM comments
-        WHERE id in ( SELECT max(id) as id FROM comments
-                    WHERE type = :type and dbid = :dbid
-                    GROUP BY schema )
-        '''), type=str(C_SCHEMA), dbid=dbid)
-        data={}
-        for r in result.fetchall():
-            data[r[0]]=r[1]
-        return data
+        with engine.connect() as conn:
+            result = conn.execute(text('''
+            SELECT schema, memo FROM comments
+            WHERE id in ( SELECT max(id) as id FROM comments
+                        WHERE type = :type and dbid = :dbid
+                        GROUP BY schema )
+            '''), {'type':str(C_SCHEMA), 'dbid':dbid})
+            data={}
+            for r in result.fetchall():
+                data[r[0]]=r[1]
+            return data
     except Exception:
         return {}
 
 def get_table_comments(dbid: str, schema: str):
     try:
-        engine = create_engine(_conn_str)
-        result = engine.execute(text('''
-        SELECT tabname, memo FROM comments
-        WHERE id in ( SELECT max(id) as id FROM comments
-                    WHERE type = :type and dbid = :dbid and schema = :schema
-                    GROUP BY tabname )
-        '''), type=str(C_TABLE), dbid=dbid, schema=schema)
+        engine = create_engine(_conn_str)       
         data={}
-        for r in result.fetchall():
-            data[r[0]]=r[1]
+        with engine.connect() as conn:
+            result = conn.execute(text('''
+            SELECT tabname, memo FROM comments
+            WHERE id in ( SELECT max(id) as id FROM comments
+                        WHERE type = :type and dbid = :dbid and schema = :schema
+                        GROUP BY tabname )
+            '''), {'type':str(C_TABLE), 'dbid':dbid, 'schema':schema})
+            
+            for r in result.fetchall():
+                data[r[0]]=r[1]
         return data
     except Exception:
         return {}
@@ -83,16 +87,17 @@ def get_table_comments(dbid: str, schema: str):
 def get_column_comments(dbid: str, schema: str, table: str):
     try:
         engine = create_engine(_conn_str)
-        result = engine.execute(text('''
-        SELECT colname, memo FROM comments
-        WHERE id in ( SELECT max(id) as id FROM comments
-                    WHERE type = :type and dbid = :dbid and schema = :schema and tabname = :table
-                    GROUP BY colname )
-        '''), type=str(C_COLUMN), dbid=dbid, schema=schema, table=table)
-        data={}
-        for r in result.fetchall():
-            data[r[0]]=r[1]
-        return data
+        with engine.connect() as conn:
+            result = conn.execute(text('''
+            SELECT colname, memo FROM comments
+            WHERE id in ( SELECT max(id) as id FROM comments
+                        WHERE type = :type and dbid = :dbid and schema = :schema and tabname = :table
+                        GROUP BY colname )
+            '''), {'type':str(C_COLUMN), 'dbid':dbid, 'schema':schema, 'table':table})
+            data={}
+            for r in result.fetchall():
+                data[r[0]]=r[1]
+            return data
     except Exception:
         return {}
 

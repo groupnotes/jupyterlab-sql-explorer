@@ -18,7 +18,7 @@ def query(dbid, sql, **kwargs) ->list:
     eng = engine.getEngine(dbid, usedb)
     if eng:
         conn = eng.connect()
-        result = conn.execute(sql)
+        result = conn.exec_driver_sql(sql)
         data = result.fetchall()
         conn.close()
         return data
@@ -79,7 +79,11 @@ def query_exec(dbid, sql, **kwargs) ->dict:
         usedb=kwargs['db']
     eng = engine.getEngine(dbid, usedb)
     if eng:
-        result = eng.execute(sql)
+        conn = eng.connect()
+        transaction=conn.begin()
+        result = conn.exec_driver_sql(sql)
+        transaction.commit()
+        conn.close()
         if result.returns_rows:
             data = [make_row_serializable(row) for row in result]
             columns = list(result.keys())
