@@ -42,7 +42,7 @@ jobs:
 
         pytest -vv -r ap --cov jupyterlab-sql-explorer
         jupyter server extension list
-        jupyter server extension list 2>&1 | grep -ie "jupyterlab-sql-explorer.*OK"
+        jupyter server extension list 2>&1 | grep -ie "jupyterlab_sql_explorer.*OK"
 
         jupyter labextension list
         jupyter labextension list 2>&1 | grep -ie "jupyterlab-sql-explorer.*OK"
