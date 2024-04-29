@@ -54,7 +54,7 @@ jobs:
 
         pip install build
         python -m build
-        pip uninstall -y "jupyterlab-sql-explorer" jupyterlab
+        pip uninstall -y "jupyterlab_sql_explorer" jupyterlab
 
     - name: Upload extension packages
       uses: actions/upload-artifact@v4
