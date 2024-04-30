@@ -46,8 +46,8 @@ Ensure that each team member follows the steps mentioned above to modify the con
 
 ## Requirements
 
-- JupyterLab >= 3.2
-- sqlalchemy >1.4 <2.0
+- JupyterLab >= 4.0  : for JupyterLab 3.x please use version 0.1.x 
+- sqlalchemy >1.4 
 
 ## Install
 
