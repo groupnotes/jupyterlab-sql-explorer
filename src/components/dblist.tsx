@@ -12,7 +12,7 @@ import {
 } from '@jupyterlab/ui-components';
 import { FixedSizeList as List } from 'react-window';
 import { Loading } from './loading';
-import AutoSizer from '../auto_resizer';
+import AutoSizer from 'react-virtualized-auto-sizer'
 
 import { IDbItem, ConnType, CommentType, IComment } from '../interfaces';
 import { IJpServices } from '../JpServices';

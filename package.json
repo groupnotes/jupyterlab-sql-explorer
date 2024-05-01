@@ -70,7 +70,7 @@
         "@lumino/commands": "^2.3.0",
         "@lumino/datagrid": "^2.3.0-alpha.0",
         "@lumino/widgets": "^2.3.2",
-        "react-virtualized-auto-sizer": "^1.0.20",
+        "react-virtualized-auto-sizer": "^1.0.24",
         "react-window": "^1.8.9"
     },
     "devDependencies": {
