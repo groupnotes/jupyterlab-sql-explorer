@@ -11,9 +11,9 @@ import {
   editIcon
 } from '@jupyterlab/ui-components';
 import { FixedSizeList as List } from 'react-window';
-import { Loading } from './loading';
-import AutoSizer from 'react-virtualized-auto-sizer'
+import AutoSizer from 'react-virtualized-auto-sizer';
 
+import { Loading } from './loading';
 import { IDbItem, ConnType, CommentType, IComment } from '../interfaces';
 import { IJpServices } from '../JpServices';
 import {
